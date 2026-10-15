@@ -1,5 +1,5 @@
 import { TranslationList } from "../components/TranslationList";
-import type { ThemePreference } from "../lib/preferences";
+import type { ReadingMode, ThemePreference } from "../lib/preferences";
 import { useTranslation } from "../lib/translation";
 import "./SettingsScreen.css";
 
@@ -9,6 +9,11 @@ const THEME_OPTIONS: { value: ThemePreference; label: string }[] = [
   { value: "dark", label: "Dark" },
 ];
 
+const MODE_OPTIONS: { value: ReadingMode; label: string }[] = [
+  { value: "single", label: "One translation" },
+  { value: "parallel", label: "Parallel" },
+];
+
 export function SettingsScreen({
   theme,
   onThemeChange,
@@ -16,7 +21,7 @@ export function SettingsScreen({
   theme: ThemePreference;
   onThemeChange: (theme: ThemePreference) => void;
 }) {
-  const { translation, installed, unavailableSavedId } = useTranslation();
+  const { translation, parallel, installed, unavailableSavedId, readingMode, setReadingMode } = useTranslation();
   return (
     <div>
       <h1 className="screen-title">Settings</h1>
@@ -59,6 +64,33 @@ export function SettingsScreen({
         <p className="settings__hint">Opens in the reader and is remembered after restarting.</p>
       </section>
 
+      {parallel && (
+        <section className="section" aria-labelledby="set-mode">
+          <div className="section__header">
+            <h2 id="set-mode" className="section__title">
+              Reading mode
+            </h2>
+          </div>
+          <div className="segmented" role="radiogroup" aria-labelledby="set-mode">
+            {MODE_OPTIONS.map((opt) => (
+              <button
+                key={opt.value}
+                type="button"
+                role="radio"
+                className="segmented__option"
+                aria-checked={readingMode === opt.value}
+                onClick={() => setReadingMode(opt.value)}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+          <p className="settings__hint">
+            Parallel shows {translation.abbreviation} beside {parallel.abbreviation}, verse by verse. Change
+            either column from the reader.
+          </p>
+        </section>
+      )}
 
       <section className="section" aria-labelledby="set-licences">
         <div className="section__header">

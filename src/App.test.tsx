@@ -368,3 +368,118 @@ describe("library and settings", () => {
     expect(screen.getByText(/creativecommons\.org\/licenses\/by-sa\/4\.0/)).toBeInTheDocument();
   });
 });
+
+describe("parallel reading", () => {
+  async function openParallel(reference: string) {
+    const user = await goTo(reference);
+    await user.click(screen.getByRole("button", { name: "Parallel reading" }));
+    await chapterLoaded();
+    return user;
+  }
+
+  it("shows English and Malayalam side by side for the same verse", async () => {
+    await openParallel("John 3:16");
+    expect(screen.getByRole("button", { name: "Parallel reading" })).toHaveAttribute("aria-pressed", "true");
+    const row = document.getElementById("v16")!;
+    const cells = row.querySelectorAll(".pverse__cell");
+    expect(cells[0]).toHaveAttribute("lang", "en");
+    expect(cells[0]).toHaveTextContent(/For God so loved the world/);
+    expect(cells[1]).toHaveAttribute("lang", "ml");
+    expect(cells[1]).toHaveTextContent(/ലോകത്തെ സ്നേഹിച്ചു/);
+    expect(row).toHaveClass("verse--target");
+    expect(screen.getByText("യോഹന്നാന്‍ 3")).toBeInTheDocument();
+    expect(screen.getByText(/World English Bible\. Public domain\./)).toBeInTheDocument();
+    expect(screen.getByText(/Bridge Communication Systems/)).toBeInTheDocument();
+    expect(localStorage.getItem("versepath.readingMode")).toBe("parallel");
+  });
+
+  it("keeps every row aligned by verse number across the whole chapter", async () => {
+    await openParallel("Genesis 1");
+    const rows = document.querySelectorAll(".pverse");
+    expect(rows).toHaveLength(31);
+    rows.forEach((row, i) => {
+      expect(row.id).toBe(`v${i + 1}`);
+      expect(row.querySelectorAll(".pverse__cell")).toHaveLength(2);
+    });
+  });
+
+  it("shows a verse missing from one translation without shifting the other", async () => {
+    await openParallel("Romans 16:25-27");
+    const [web25, irv25] = document.getElementById("v25")!.querySelectorAll(".pverse__cell");
+    expect(web25).toHaveTextContent("Verse 25 is not included in the WEB text.");
+    expect(irv25).toHaveTextContent("Verse 25 is not included in the IRV text.");
+    const [web26, irv26] = document.getElementById("v26")!.querySelectorAll(".pverse__cell");
+    expect(web26).toHaveClass("pverse__cell--missing");
+    expect(irv26).not.toHaveClass("pverse__cell--missing");
+    expect(irv26).toHaveAttribute("lang", "ml");
+  });
+
+  it("selects verses and ranges in both columns at once", async () => {
+    const user = await openParallel("John 3");
+    await user.click(screen.getByRole("button", { name: "Verse 16" }));
+    await user.click(screen.getByRole("button", { name: "Verse 18" }));
+    for (const n of [16, 17, 18]) expect(document.getElementById(`v${n}`)).toHaveClass("verse--target");
+    expect(document.getElementById("v19")).not.toHaveClass("verse--target");
+    expect(screen.getByRole("button", { name: /^John 3:16-18\. Go to another passage/ })).toBeInTheDocument();
+  });
+
+  it("moves both columns together to the next chapter", async () => {
+    const user = await openParallel("John 3");
+    await user.click(screen.getByRole("button", { name: "Next chapter: John 4" }));
+    await chapterLoaded();
+    expect(screen.getByRole("heading", { level: 1, name: "John 4" })).toBeInTheDocument();
+    expect(screen.getByText("യോഹന്നാന്‍ 4")).toBeInTheDocument();
+    expect(document.getElementById("v1")!.querySelectorAll(".pverse__cell")[1]).toHaveAttribute("lang", "ml");
+  });
+
+  it("has an independent selector per column, swapping when both would match", async () => {
+    const user = await openParallel("John 3:16");
+    await user.click(screen.getByRole("button", { name: /^Second column: .*IRV.*Change translation/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /World English Bible/ }));
+    await chapterLoaded();
+
+    expect(screen.getByRole("button", { name: /^First column: .*IRV/ })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^Second column: World English Bible/ })).toBeInTheDocument();
+    const cells = document.getElementById("v16")!.querySelectorAll(".pverse__cell");
+    expect(cells[0]).toHaveAttribute("lang", "ml");
+    expect(cells[1]).toHaveTextContent(/For God so loved the world/);
+    expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
+    expect(localStorage.getItem("versepath.parallelTranslation")).toBe("web");
+  });
+
+  it("returns to the single-translation reader and keeps the passage", async () => {
+    const user = await openParallel("John 3:16");
+    await user.click(screen.getByRole("button", { name: "Parallel reading" }));
+    expect(document.querySelector(".pverse")).toBeNull();
+    expect(screen.getByRole("button", { name: /^Translation: World English Bible/ })).toBeInTheDocument();
+    expect(document.getElementById("v16")).toHaveClass("verse--target");
+    expect(localStorage.getItem("versepath.readingMode")).toBe("single");
+  });
+
+  it("restores parallel mode after a restart", async () => {
+    localStorage.setItem("versepath.readingMode", "parallel");
+    await goTo("Psalm 23");
+    expect(document.getElementById("v1")!.querySelectorAll(".pverse__cell")).toHaveLength(2);
+  });
+
+  it("can be chosen in Settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("radio", { name: "Parallel" }));
+    expect(localStorage.getItem("versepath.readingMode")).toBe("parallel");
+    expect(screen.getByText(/Parallel shows WEB beside IRV/)).toBeInTheDocument();
+  });
+
+  it("explains when one column's translation lacks the book, keeping the other", async () => {
+    localStorage.setItem("versepath.translation", "sample-en");
+    localStorage.setItem("versepath.parallelTranslation", "sample-ml");
+    localStorage.setItem("versepath.readingMode", "parallel");
+    await goTo("Genesis 1", <App repository={sampleRepository()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Genesis isn’t included in SML yet.");
+    const [first, second] = document.getElementById("v1")!.querySelectorAll(".pverse__cell");
+    expect(first).toHaveTextContent("[Sample text, not Scripture] GEN 1:1");
+    expect(second).toBeEmptyDOMElement();
+    expect(screen.getByRole("note")).toHaveTextContent(/Sample data\./);
+  });
+});

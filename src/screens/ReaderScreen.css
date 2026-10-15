@@ -51,12 +51,27 @@
   color: var(--color-text-subtle);
 }
 
+.reader__mode {
+  flex-shrink: 0;
+  color: var(--color-text-muted);
+}
+
+.reader__mode--on {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
 /* ---------- Text ---------- */
 
 .reader__body {
   max-width: var(--reader-max);
   margin: 0 auto;
   padding: var(--space-4) var(--space-5) 0;
+}
+
+/* Two columns need more room than one comfortable reading measure. */
+.reader__body--parallel {
+  max-width: calc(var(--reader-max) * 2);
 }
 
 .reader__heading {

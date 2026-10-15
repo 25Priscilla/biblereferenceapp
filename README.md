@@ -6,7 +6,7 @@ VersePath is a free mobile Bible app for pastors, preachers, Sunday school teach
 
 No account. No ads. No subscriptions.
 
-> **Status: Phase 3 (translations).** Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, and references can be typed in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
+> **Status: Phase 3 (translations).** Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, read two translations in parallel, and type references in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
 
 ## Tech stack
 
@@ -66,7 +66,7 @@ src/
   main.tsx             Entry point: fonts, global CSS, theme applied before first paint
   styles/              tokens.css (design tokens, light/dark) and base.css (shared primitives)
   components/          BottomNav, Sidebar, ReferenceSearch, BookNavigator, JumpSheet, TranslationMenu,
-                       TranslationList, PlaceholderNotice, Icon
+                       TranslationList, ParallelText, PlaceholderNotice, Icon
   screens/             Home, Books, Reader, Library, Settings
   bible/               canon.ts (book IDs and metadata, no text), aliases.ts (abbreviations),
                        reference.ts (parse, validate, format), chapterNav.ts (previous/next), types.ts
@@ -96,6 +96,10 @@ The parser (`src/bible/reference.ts`) accepts:
 | `യോഹ. 3:16`, `യോഹന്നാൻ 3:16`, `സങ്കീ. 23` | Malayalam book names and abbreviations, as printed in the IRV |
 
 Invalid input gets a specific message: unknown books suggest the closest match ("Did you mean John?"), ambiguous abbreviations ("Ph") list the candidates, and chapters past the end of a book say how many chapters it has. Ranges that span chapters (`John 3:16-4:2`, `Genesis 1-3`) are not supported yet and say so. Verse upper bounds are checked by the reader against each translation's own verse counts, not by the parser.
+
+## Parallel reading
+
+The columns button in the reader toolbar shows two translations verse by verse. They sit side by side when there is room and as stacked pairs on phones. Each column has its own translation selector, and choosing the other column's translation swaps the two. Chapter navigation, the passage and verse selection are shared by both columns. Every verse number is a single row, so a verse that one translation omits shows as "not included" in that column, and the other column never shifts. The reading mode and both translations are remembered after a restart. You can also set the reading mode in **Settings → Reading mode**.
 
 ## Adding Bible translations
 

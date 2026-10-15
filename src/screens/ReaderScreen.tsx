@@ -5,6 +5,7 @@ import type { PassageRef } from "../bible/types";
 import { BookNavigator } from "../components/BookNavigator";
 import { Icon } from "../components/Icon";
 import { JumpSheet } from "../components/JumpSheet";
+import { ParallelText } from "../components/ParallelText";
 import { PlaceholderNotice } from "../components/PlaceholderNotice";
 import { ReferenceSearch } from "../components/ReferenceSearch";
 import { TranslationMenu } from "../components/TranslationMenu";
@@ -31,10 +32,21 @@ function nextSelection(current: Selection | null, verse: number): Selection | nu
 /**
  * Scripture reader. Kept deliberately quiet: a slim toolbar and the text.
  * Text comes from the active translation via the translation repository.
+ * In parallel mode a second translation is shown verse by verse alongside;
+ * navigation, the passage and verse selection are shared by both columns.
  */
 export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const { back, navigate } = useNavigation();
-  const { repository, translation } = useTranslation();
+  const {
+    repository,
+    translation,
+    parallel,
+    readingMode,
+    setReadingMode,
+    setTranslation,
+    setParallelTranslation,
+  } = useTranslation();
+  const isParallel = readingMode === "parallel" && parallel !== null;
   const wide = useMediaQuery(WIDE_QUERY);
   const withPanel = useMediaQuery(PANEL_QUERY);
   const [jumpOpen, setJumpOpen] = useState(false);
@@ -43,7 +55,11 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   );
   const book = getBook(passage.book);
   const state = useChapter(repository, translation.id, passage.book, passage.chapter);
-  const loaded = state.status === "done" && state.result.ok ? state.result.chapter : null;
+  // In single mode this resolves to the same cached book as `state`.
+  const second = useChapter(repository, (isParallel && parallel?.id) || translation.id, passage.book, passage.chapter);
+  const ready = state.status === "done" && (!isParallel || second.status === "done");
+  const anyLoaded =
+    (state.status === "done" && state.result.ok) || (isParallel && second.status === "done" && second.result.ok);
 
   const prev = repository.previousChapter(translation.id, passage);
   const next = repository.nextChapter(translation.id, passage);
@@ -67,9 +83,9 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   }, [wide, go, prev, next]);
 
   useEffect(() => {
-    if (passage.verse === undefined || !loaded) return;
+    if (passage.verse === undefined || !ready) return;
     document.getElementById(`v${passage.verse}`)?.scrollIntoView?.({ block: "start" });
-  }, [passage.verse, loaded]);
+  }, [passage.verse, ready, isParallel]);
 
   if (!book || passage.chapter < 1 || passage.chapter > book.chapters) {
     return (
@@ -88,12 +104,58 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const chapterTitle = `${repository.bookName(translation.id, book.id)} ${passage.chapter}`;
   const isSelected = (n: number) => selection !== null && n >= selection.start && n <= selection.end;
 
+  const select = (n: number) => setSelection((s) => nextSelection(s, n));
+  const requestedEnd = passage.verseEnd ?? passage.verse;
+
   let content;
-  if (state.status === "loading") {
+  if (!ready) {
     content = (
       <p className="reader__status" role="status">
         Opening {formatReference(shownRef)}…
       </p>
+    );
+  } else if (isParallel && parallel && second.status === "done") {
+    const results = [state.result, second.result];
+    const counts = results.map((r) => (r.ok ? r.chapter.verseCount : 0));
+    const outOfRange =
+      requestedEnd !== undefined && results.some((r) => r.ok) && requestedEnd > Math.max(...counts);
+    content = (
+      <>
+        {outOfRange && (
+          <p className="reader__range-note" role="note">
+            {chapterTitle} has {Math.max(...counts)} verses in these translations, so verse {requestedEnd}{" "}
+            isn’t shown.
+          </p>
+        )}
+        <ParallelText
+          columns={[
+            {
+              info: translation,
+              result: state.result,
+              title: chapterTitle,
+              label: "First column",
+              onChange: setTranslation,
+            },
+            {
+              info: parallel,
+              result: second.result,
+              title: `${repository.bookName(parallel.id, book.id)} ${passage.chapter}`,
+              label: "Second column",
+              onChange: setParallelTranslation,
+            },
+          ]}
+          isSelected={isSelected}
+          onSelect={select}
+        />
+        {[translation, parallel].map(
+          (t) =>
+            t.attribution && (
+              <p key={t.id} className="reader__attribution" lang="en">
+                {t.attribution}
+              </p>
+            ),
+        )}
+      </>
     );
   } else if (!state.result.ok) {
     content = (
@@ -107,7 +169,6 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     );
   } else {
     const chapter = state.result.chapter;
-    const requestedEnd = passage.verseEnd ?? passage.verse;
     const outOfRange = requestedEnd !== undefined && requestedEnd > chapter.verseCount;
     const rows = [
       ...chapter.verses.map((v) => ({ number: v.number, text: v.text as string | null })),
@@ -135,7 +196,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
                 key={number}
                 id={`v${number}`}
                 className={isSelected(number) ? "verse verse--target" : "verse"}
-                onClick={() => setSelection((s) => nextSelection(s, number))}
+                onClick={() => select(number)}
               >
                 <button
                   type="button"
@@ -144,7 +205,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
                   aria-pressed={isSelected(number)}
                   onClick={(e) => {
                     e.stopPropagation();
-                    setSelection((s) => nextSelection(s, number));
+                    select(number);
                   }}
                 >
                   {number}
@@ -207,14 +268,26 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
             <ReferenceSearch compact label="Jump to a reference" />
           </div>
         )}
-        <TranslationMenu />
+        {!isParallel && <TranslationMenu value={translation} onChange={setTranslation} />}
+        {parallel && (
+          <button
+            type="button"
+            className={isParallel ? "icon-btn reader__mode reader__mode--on" : "icon-btn reader__mode"}
+            aria-label="Parallel reading"
+            aria-pressed={isParallel}
+            title={isParallel ? "Show one translation" : "Show two translations side by side"}
+            onClick={() => setReadingMode(isParallel ? "single" : "parallel")}
+          >
+            <Icon name="columns" size={20} />
+          </button>
+        )}
       </header>
 
-      <div className="reader__body">
-        {translation.isPlaceholder && (
+      <div className={isParallel ? "reader__body reader__body--parallel" : "reader__body"}>
+        {(translation.isPlaceholder || (isParallel && parallel?.isPlaceholder)) && (
           <PlaceholderNotice>
-            <strong>Sample data.</strong> {translation.name} is a test fixture, not a Bible translation.
-            The lines below are not Scripture.
+            <strong>Sample data.</strong> {translation.isPlaceholder ? translation.name : parallel?.name} is
+            a test fixture, not a Bible translation. Its lines are not Scripture.
           </PlaceholderNotice>
         )}
 
@@ -224,7 +297,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
 
         {content}
 
-        {selection && loaded && (
+        {selection && ready && anyLoaded && (
           <div className="reader__selection" role="status">
             <span>{formatReference(shownRef)} selected</span>
             <button type="button" className="btn btn--secondary" onClick={() => setSelection(null)}>

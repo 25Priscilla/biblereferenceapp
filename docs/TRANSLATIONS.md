@@ -73,7 +73,8 @@ Translations can differ in numbering. Each translation's data defines its own ve
 
 - keeps the current `PassageRef` when switching translations;
 - shows a note if the requested verse is past the end of the chapter in that translation;
-- shows omitted verses as “Verse N is not included in the … text” rather than skipping them silently.
+- shows omitted verses as “Verse N is not included in the … text” rather than skipping them silently;
+- in parallel reading, aligns both translations by verse number. Rows run to the higher of the two verse counts, and a verse missing from one translation shows as not included in that column only.
 
 Known differences in the bundled texts: the WEB has no text for Luke 17:36, Acts 8:37, Acts 15:34, Acts 24:7 or Romans 16:25. The IRV places the Romans doxology at 16:25-27 and has no 16:24-25. The IRV also has 3 John 1:15 and Revelation 12:18. Both follow the English chapter structure of all 66 books.
 

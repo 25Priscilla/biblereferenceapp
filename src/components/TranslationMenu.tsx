@@ -1,14 +1,28 @@
 import { useEffect, useRef, useState } from "react";
+import type { TranslationInfo } from "../bible/types";
 import { useTranslation } from "../lib/translation";
 import { Icon } from "./Icon";
 import "./TranslationMenu.css";
 
 /**
- * Translation switcher in the reader toolbar. Changing translation keeps the
- * current passage, because the passage lives in the route, not here.
+ * Translation switcher in the reader. Changing translation keeps the current
+ * passage, because the passage lives in the route, not here. Parallel reading
+ * uses one menu per column, each with its own `label`.
  */
-export function TranslationMenu() {
-  const { translation, installed, setTranslation } = useTranslation();
+export function TranslationMenu({
+  value,
+  onChange,
+  label = "Translation",
+  align = "end",
+}: {
+  value: TranslationInfo;
+  onChange: (id: string) => void;
+  /** Prefix for the accessible name, e.g. "Translation" or "First column". */
+  label?: string;
+  align?: "start" | "end";
+}) {
+  const { installed } = useTranslation();
+  const translation = value;
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -41,7 +55,7 @@ export function TranslationMenu() {
         className="translation-menu__button"
         aria-haspopup="menu"
         aria-expanded={open}
-        aria-label={`Translation: ${translation.name}. Change translation`}
+        aria-label={`${label}: ${translation.name}. Change translation`}
         title={translation.name}
         onClick={() => setOpen((o) => !o)}
       >
@@ -49,7 +63,11 @@ export function TranslationMenu() {
         <Icon name="chevronDown" size={16} />
       </button>
       {open && (
-        <div className="translation-menu__list" role="menu" aria-label="Translations">
+        <div
+          className={`translation-menu__list translation-menu__list--${align}`}
+          role="menu"
+          aria-label={label === "Translation" ? "Translations" : `${label} translations`}
+        >
           {installed.map((t) => (
             <button
               key={t.id}
@@ -58,7 +76,7 @@ export function TranslationMenu() {
               aria-checked={t.id === translation.id}
               className="translation-menu__item"
               onClick={() => {
-                setTranslation(t.id);
+                onChange(t.id);
                 setOpen(false);
                 buttonRef.current?.focus();
               }}
