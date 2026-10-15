@@ -22,6 +22,9 @@ export default defineConfig({
     // Android WebView / iOS WKWebView targets
     target: process.env.TAURI_ENV_PLATFORM === "windows" ? "chrome105" : "safari15",
     sourcemap: !!process.env.TAURI_ENV_DEBUG,
+    // Each Bible book is its own lazily loaded chunk; the largest (Malayalam
+    // Psalms) is ~700 kB raw / ~100 kB gzipped. App code stays far below this.
+    chunkSizeWarningLimit: 800,
   },
   test: {
     environment: "jsdom",

@@ -1,31 +1,52 @@
 import { useCallback, useEffect, useState } from "react";
 import { getBook } from "../bible/canon";
-import { nextChapter, previousChapter } from "../bible/chapterNav";
-import { bookDisplayName, formatReference } from "../bible/reference";
+import { formatReference } from "../bible/reference";
 import type { PassageRef } from "../bible/types";
 import { BookNavigator } from "../components/BookNavigator";
 import { Icon } from "../components/Icon";
 import { JumpSheet } from "../components/JumpSheet";
 import { PlaceholderNotice } from "../components/PlaceholderNotice";
 import { ReferenceSearch } from "../components/ReferenceSearch";
-import { PLACEHOLDER_TRANSLATION, placeholderChapter } from "../fixtures/placeholder";
+import { TranslationMenu } from "../components/TranslationMenu";
 import { useNavigation } from "../lib/navigation";
+import { useTranslation } from "../lib/translation";
+import { useChapter } from "../lib/useChapter";
 import { PANEL_QUERY, useMediaQuery, WIDE_QUERY } from "../lib/useMediaQuery";
 import "./ReaderScreen.css";
 
+interface Selection {
+  start: number;
+  end: number;
+}
+
+/** Tap a verse to select it, tap another to extend to a range, tap again to clear. */
+function nextSelection(current: Selection | null, verse: number): Selection | null {
+  if (current && current.start === current.end) {
+    if (current.start === verse) return null;
+    return { start: Math.min(current.start, verse), end: Math.max(current.start, verse) };
+  }
+  return { start: verse, end: verse };
+}
+
 /**
  * Scripture reader. Kept deliberately quiet: a slim toolbar and the text.
- * Placeholder fixtures only until verified translations land in Phase 3.
+ * Text comes from the active translation via the translation repository.
  */
 export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const { back, navigate } = useNavigation();
+  const { repository, translation } = useTranslation();
   const wide = useMediaQuery(WIDE_QUERY);
   const withPanel = useMediaQuery(PANEL_QUERY);
   const [jumpOpen, setJumpOpen] = useState(false);
+  const [selection, setSelection] = useState<Selection | null>(() =>
+    passage.verse === undefined ? null : { start: passage.verse, end: passage.verseEnd ?? passage.verse },
+  );
   const book = getBook(passage.book);
+  const state = useChapter(repository, translation.id, passage.book, passage.chapter);
+  const loaded = state.status === "done" && state.result.ok ? state.result.chapter : null;
 
-  const prev = previousChapter(passage);
-  const next = nextChapter(passage);
+  const prev = repository.previousChapter(translation.id, passage);
+  const next = repository.nextChapter(translation.id, passage);
   // Stepping chapters replaces the history entry so Back leaves the reader
   // instead of rewinding chapter by chapter.
   const go = useCallback(
@@ -37,7 +58,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     if (!wide) return;
     const onKey = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement | null;
-      if (e.altKey || e.ctrlKey || e.metaKey || target?.closest("input, textarea, [role=dialog]")) return;
+      if (e.altKey || e.ctrlKey || e.metaKey || target?.closest("input, textarea, [role=dialog], [role=menu]")) return;
       if (e.key === "ArrowLeft") go(prev);
       if (e.key === "ArrowRight") go(next);
     };
@@ -46,9 +67,9 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   }, [wide, go, prev, next]);
 
   useEffect(() => {
-    if (passage.verse === undefined) return;
+    if (passage.verse === undefined || !loaded) return;
     document.getElementById(`v${passage.verse}`)?.scrollIntoView?.({ block: "start" });
-  }, [passage.verse]);
+  }, [passage.verse, loaded]);
 
   if (!book || passage.chapter < 1 || passage.chapter > book.chapters) {
     return (
@@ -61,13 +82,87 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     );
   }
 
-  const chapter = placeholderChapter(book.id, passage.chapter, passage.verseEnd ?? passage.verse);
-  const chapterTitle = `${bookDisplayName(book)} ${passage.chapter}`;
-  const lastVerse = chapter.verses.length;
-  const requestedEnd = passage.verseEnd ?? passage.verse;
-  const outOfRange = requestedEnd !== undefined && requestedEnd > lastVerse;
-  const isTarget = (n: number) =>
-    passage.verse !== undefined && n >= passage.verse && n <= (passage.verseEnd ?? passage.verse);
+  const shownRef: PassageRef = selection
+    ? { book: book.id, chapter: passage.chapter, verse: selection.start, verseEnd: selection.end }
+    : { book: book.id, chapter: passage.chapter };
+  const chapterTitle = `${repository.bookName(translation.id, book.id)} ${passage.chapter}`;
+  const isSelected = (n: number) => selection !== null && n >= selection.start && n <= selection.end;
+
+  let content;
+  if (state.status === "loading") {
+    content = (
+      <p className="reader__status" role="status">
+        Opening {formatReference(shownRef)}…
+      </p>
+    );
+  } else if (!state.result.ok) {
+    content = (
+      <div className="reader__unavailable" role="status">
+        <p>{state.result.message}</p>
+        <p className="reader__unavailable-hint">Choose another translation above, or another passage.</p>
+        <button type="button" className="btn btn--secondary" onClick={() => navigate({ name: "books" })}>
+          Browse books
+        </button>
+      </div>
+    );
+  } else {
+    const chapter = state.result.chapter;
+    const requestedEnd = passage.verseEnd ?? passage.verse;
+    const outOfRange = requestedEnd !== undefined && requestedEnd > chapter.verseCount;
+    const rows = [
+      ...chapter.verses.map((v) => ({ number: v.number, text: v.text as string | null })),
+      ...chapter.missing.map((n) => ({ number: n, text: null })),
+    ].sort((a, b) => a.number - b.number);
+
+    content = (
+      <>
+        {outOfRange && (
+          <p className="reader__range-note" role="note">
+            {chapterTitle} has {chapter.verseCount} verses in this translation, so verse {requestedEnd} isn’t
+            shown.
+          </p>
+        )}
+
+        <div className="reader__text" lang={translation.language}>
+          {rows.map(({ number, text }) =>
+            text === null ? (
+              <p key={number} id={`v${number}`} className="verse verse--missing" lang="en">
+                <span className="verse__number">{number}</span>
+                Verse {number} is not included in the {translation.abbreviation} text.
+              </p>
+            ) : (
+              <p
+                key={number}
+                id={`v${number}`}
+                className={isSelected(number) ? "verse verse--target" : "verse"}
+                onClick={() => setSelection((s) => nextSelection(s, number))}
+              >
+                <button
+                  type="button"
+                  className="verse__number"
+                  aria-label={`Verse ${number}`}
+                  aria-pressed={isSelected(number)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSelection((s) => nextSelection(s, number));
+                  }}
+                >
+                  {number}
+                </button>
+                {text}
+              </p>
+            ),
+          )}
+        </div>
+
+        {translation.attribution && (
+          <p className="reader__attribution" lang="en">
+            {translation.attribution}
+          </p>
+        )}
+      </>
+    );
+  }
 
   const article = (
     <article className="reader__article" aria-labelledby="reader-title">
@@ -91,10 +186,10 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
             type="button"
             className="reader__ref"
             aria-haspopup="dialog"
-            aria-label={`${formatReference(passage)}. Go to another passage`}
+            aria-label={`${formatReference(shownRef)}. Go to another passage`}
             onClick={() => setJumpOpen(true)}
           >
-            <span>{formatReference(passage)}</span>
+            <span>{formatReference(shownRef)}</span>
             <Icon name="chevronDown" size={18} />
           </button>
           <button
@@ -112,46 +207,31 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
             <ReferenceSearch compact label="Jump to a reference" />
           </div>
         )}
-        <span
-          className="reader__translation"
-          title={PLACEHOLDER_TRANSLATION.name}
-          aria-label={`Translation: ${PLACEHOLDER_TRANSLATION.name}`}
-        >
-          {PLACEHOLDER_TRANSLATION.abbreviation}
-        </span>
+        <TranslationMenu />
       </header>
 
       <div className="reader__body">
-        <PlaceholderNotice>
-          <strong>Placeholder text.</strong> No Bible translation is installed yet. The lines below
-          only demonstrate the reading layout and are not Scripture.
-        </PlaceholderNotice>
+        {translation.isPlaceholder && (
+          <PlaceholderNotice>
+            <strong>Sample data.</strong> {translation.name} is a test fixture, not a Bible translation.
+            The lines below are not Scripture.
+          </PlaceholderNotice>
+        )}
 
-        <h1 id="reader-title" className="reader__heading">
+        <h1 id="reader-title" className="reader__heading" lang={translation.language}>
           {chapterTitle}
         </h1>
 
-        {outOfRange && (
-          <p className="reader__range-note" role="note">
-            {chapterTitle} has {lastVerse} verses in this translation, so verse {requestedEnd} isn’t
-            shown.
-          </p>
-        )}
+        {content}
 
-        <div className="reader__text">
-          {chapter.verses.map((verse) => (
-            <p
-              key={verse.number}
-              id={`v${verse.number}`}
-              className={isTarget(verse.number) ? "verse verse--target" : "verse"}
-            >
-              <sup className="verse__number" aria-label={`Verse ${verse.number}`}>
-                {verse.number}
-              </sup>
-              {verse.text}
-            </p>
-          ))}
-        </div>
+        {selection && loaded && (
+          <div className="reader__selection" role="status">
+            <span>{formatReference(shownRef)} selected</span>
+            <button type="button" className="btn btn--secondary" onClick={() => setSelection(null)}>
+              Clear
+            </button>
+          </div>
+        )}
 
         <nav className="chapter-pager" aria-label="Chapter navigation">
           {prev ? (

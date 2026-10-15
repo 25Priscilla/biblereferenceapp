@@ -12,6 +12,7 @@
 
 import { BOOK_ALIASES } from "./aliases";
 import { BOOKS, getBook } from "./canon";
+import { MALAYALAM_BOOK_ABBREVIATIONS, MALAYALAM_BOOK_NAMES } from "./translations/malayalamNames";
 import type { BookInfo } from "./canon";
 import type { PassageRef } from "./types";
 
@@ -23,16 +24,29 @@ const ORDINAL_PREFIX: [RegExp, string][] = [
   [/^(?:i|first|1st)[\s.]+/, "1"],
 ];
 
-/** "I Sam." → "1sam", "Song of Songs" → "songofsongs". */
+// Malayalam chillu letters have two encodings: the atomic letters (U+0D7A–
+// U+0D7F) and the older consonant + virama + zero-width joiner. Published
+// texts mix both, so matching folds the old form into the atomic one.
+const OLD_CHILLU: [RegExp, string][] = [
+  [/\u0D23\u0D4D\u200D/g, "\u0D7A"],
+  [/\u0D28\u0D4D\u200D/g, "\u0D7B"],
+  [/\u0D30\u0D4D\u200D/g, "\u0D7C"],
+  [/\u0D32\u0D4D\u200D/g, "\u0D7D"],
+  [/\u0D33\u0D4D\u200D/g, "\u0D7E"],
+  [/\u0D15\u0D4D\u200D/g, "\u0D7F"],
+];
+
+/** "I Sam." → "1sam", "Song of Songs" → "songofsongs", "യോഹന്നാന്‍" → "യോഹന്നാൻ". */
 export function normaliseBookName(input: string): string {
-  let s = input.trim().toLowerCase().replace(/\s+/g, " ");
+  let s = input.normalize("NFC").trim().toLowerCase().replace(/\s+/g, " ");
+  for (const [pattern, chillu] of OLD_CHILLU) s = s.replace(pattern, chillu);
   for (const [pattern, digit] of ORDINAL_PREFIX) {
     if (pattern.test(s)) {
       s = s.replace(pattern, digit);
       break;
     }
   }
-  return s.replace(/[\s.'’]/g, "");
+  return s.replace(/[\s.'’\u200C\u200D]/g, "");
 }
 
 const ALIAS_INDEX: ReadonlyMap<string, string> = (() => {
@@ -49,9 +63,20 @@ const ALIAS_INDEX: ReadonlyMap<string, string> = (() => {
     add(book.name, book.id);
     add(book.id, book.id);
     for (const alias of BOOK_ALIASES[book.id] ?? []) add(alias, book.id);
+    const malayalam = MALAYALAM_BOOK_NAMES[book.id];
+    if (malayalam) add(malayalam, book.id);
+    for (const alias of MALAYALAM_BOOK_ABBREVIATIONS[book.id] ?? []) add(alias, book.id);
   }
   return index;
 })();
+
+/** Full book names (English and Malayalam), normalised, for prefix matching. */
+const FULL_NAMES: readonly [string, string][] = BOOKS.flatMap((b) => {
+  const names: [string, string][] = [[normaliseBookName(b.name), b.id]];
+  const malayalam = MALAYALAM_BOOK_NAMES[b.id];
+  if (malayalam) names.push([normaliseBookName(malayalam), b.id]);
+  return names;
+});
 
 // ---------- Book resolution ----------
 
@@ -72,7 +97,8 @@ export function resolveBook(input: string): BookMatch {
   if (exact) return { kind: "found", book: getBook(exact)! };
 
   if (key.replace(/^\d/, "").length >= 2) {
-    const candidates = BOOKS.filter((b) => normaliseBookName(b.name).startsWith(key));
+    const ids = new Set(FULL_NAMES.filter(([name]) => name.startsWith(key)).map(([, id]) => id));
+    const candidates = BOOKS.filter((b) => ids.has(b.id));
     if (candidates.length === 1) return { kind: "found", book: candidates[0]! };
     if (candidates.length > 1) return { kind: "ambiguous", candidates };
   }
@@ -135,10 +161,11 @@ export type ParseResult =
 
 const EXAMPLE = "e.g. John 3:16, Psalm 91:1-4 or Genesis 1";
 
-// Book: optional leading number/ordinal, then a name starting with a letter.
+// Book: optional leading number/ordinal, then a name starting with a letter
+// in any script (Malayalam names include combining vowel signs and joiners).
 // Location: everything from the first digit that follows the name.
 const REFERENCE_PATTERN =
-  /^((?:[1-3]\s*|(?:iii|ii|i|first|second|third|1st|2nd|3rd)[\s.]+)?[a-z][a-z\s.'’]*?)\s*(\d[\d\s:.\-]*)?$/i;
+  /^((?:[1-3]\s*|(?:iii|ii|i|first|second|third|1st|2nd|3rd)[\s.]+)?\p{L}[\p{L}\p{M}\s.'’\u200C\u200D]*?)\s*(\d[\d\s:.\-]*)?$/iu;
 
 const LOCATION_PATTERN = /^(\d+)(?:[:.](\d+))?(?:-(\d+)(?:[:.](\d+))?)?$/;
 

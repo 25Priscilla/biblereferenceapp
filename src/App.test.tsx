@@ -1,6 +1,7 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import App from "./App";
+import { sampleRepository } from "./test/fixtures";
 
 beforeEach(() => {
   localStorage.clear();
@@ -26,10 +27,16 @@ function setViewportWidth(width: number) {
   }) as typeof window.matchMedia;
 }
 
-async function goTo(reference: string) {
+/** Waits until the reader has finished loading its chapter (no-op elsewhere). */
+async function chapterLoaded() {
+  await waitFor(() => expect(screen.queryByText(/^Opening /)).not.toBeInTheDocument());
+}
+
+async function goTo(reference: string, app = <App />) {
   const user = userEvent.setup();
-  render(<App />);
+  render(app);
   await user.type(screen.getByRole("searchbox", { name: /bible reference/i }), `${reference}{Enter}`);
+  await chapterLoaded();
   return user;
 }
 
@@ -44,7 +51,7 @@ describe("app shell (mobile)", () => {
     expect(nav).toHaveTextContent(/Home.*Books.*Library.*Settings/);
   });
 
-  it("navigates Books → chapter → Reader with labelled placeholder text", async () => {
+  it("navigates Books → chapter → Reader with the World English Bible text", async () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Books" }));
@@ -53,7 +60,8 @@ describe("app shell (mobile)", () => {
     await user.click(screen.getByRole("button", { name: "John chapter 3" }));
 
     expect(screen.getByRole("heading", { level: 1, name: "John 3" })).toBeInTheDocument();
-    expect(screen.getByRole("note")).toHaveTextContent(/placeholder text/i);
+    expect(await screen.findByText(/^For God so loved the world/)).toBeInTheDocument();
+    expect(screen.queryByText(/placeholder/i)).not.toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Main" })).not.toBeInTheDocument();
   });
 
@@ -163,6 +171,7 @@ describe("jumping from the reader", () => {
     await user.click(screen.getByRole("button", { name: /John 3:16\. Go to another passage/ }));
     const dialog = screen.getByRole("dialog", { name: "Go to passage" });
     await user.type(within(dialog).getByRole("searchbox", { name: "Type a reference" }), "Romans 8:28{Enter}");
+    await chapterLoaded();
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { level: 1, name: "Romans 8" })).toBeInTheDocument();
@@ -234,5 +243,128 @@ describe("wide layout", () => {
     expect(screen.getByRole("heading", { level: 1, name: "John 4" })).toBeInTheDocument();
     await user.keyboard("{ArrowLeft}{ArrowLeft}");
     expect(screen.getByRole("heading", { level: 1, name: "John 2" })).toBeInTheDocument();
+  });
+});
+
+describe("translations in the reader", () => {
+  it("shows the real verse text for John 3:16 with attribution", async () => {
+    await goTo("John 3:16");
+    expect(document.getElementById("v16")).toHaveTextContent(/For God so loved the world/);
+    expect(screen.getByText(/World English Bible\. Public domain\./)).toBeInTheDocument();
+  });
+
+  it("switches translation from the reader and keeps the passage", async () => {
+    const user = await goTo("John 3:16");
+    await user.click(screen.getByRole("button", { name: /Translation: World English Bible/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /IRV/ }));
+    await chapterLoaded();
+
+    expect(screen.getByRole("heading", { level: 1, name: "യോഹന്നാന്‍ 3" })).toHaveAttribute("lang", "ml");
+    expect(document.getElementById("v16")).toHaveTextContent(/ലോകത്തെ സ്നേഹിച്ചു/);
+    expect(document.getElementById("v16")).toHaveClass("verse--target");
+    expect(screen.getByRole("button", { name: /John 3:16\. Go to another passage/ })).toBeInTheDocument();
+    expect(screen.getByText(/Bridge Communication Systems/)).toBeInTheDocument();
+    expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
+  });
+
+  it("restores the saved translation after a restart", async () => {
+    localStorage.setItem("versepath.translation", "ml-irv");
+    await goTo("Genesis 1");
+    expect(screen.getByRole("heading", { level: 1, name: "ഉല്‍പത്തി 1" })).toBeInTheDocument();
+    expect(document.getElementById("v1")).toHaveTextContent(/ആദിയിൽ ദൈവം/);
+  });
+
+  it("falls back to the default when the saved translation is gone, and says so", async () => {
+    localStorage.setItem("versepath.translation", "retired-version");
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("status")).toHaveTextContent(/“retired-version”\) is no longer available/);
+    expect(screen.getByRole("radio", { name: /World English Bible/ })).toHaveAttribute("aria-checked", "true");
+  });
+
+  it("selects a verse and extends it to a range", async () => {
+    const user = await goTo("John 3");
+    await user.click(screen.getByRole("button", { name: "Verse 16" }));
+    expect(screen.getByRole("button", { name: /^John 3:16\. Go to another passage/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Verse 18" }));
+    expect(screen.getByRole("button", { name: /^John 3:16-18\. Go to another passage/ })).toBeInTheDocument();
+    for (const n of [16, 17, 18]) expect(document.getElementById(`v${n}`)).toHaveClass("verse--target");
+    expect(screen.getByText("John 3:16-18 selected")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Clear" }));
+    expect(document.querySelector(".verse--target")).toBeNull();
+  });
+
+  it("shows a verse the translation omits as missing, not as text", async () => {
+    await goTo("Acts 8:36-38");
+    expect(document.getElementById("v37")).toHaveTextContent("Verse 37 is not included in the WEB text.");
+    expect(document.getElementById("v37")).toHaveClass("verse--missing");
+  });
+
+  it("notes a verse beyond the end of the chapter", async () => {
+    await goTo("John 3:99");
+    expect(screen.getByRole("note")).toHaveTextContent("John 3 has 36 verses in this translation");
+  });
+
+  it("opens a reference typed in Malayalam", async () => {
+    await goTo("യോഹ. 3:16");
+    expect(screen.getByRole("heading", { level: 1, name: "John 3" })).toBeInTheDocument();
+    expect(document.getElementById("v16")).toHaveClass("verse--target");
+  });
+});
+
+describe("translation data problems", () => {
+  beforeEach(() => vi.spyOn(console, "warn").mockImplementation(() => {}));
+  afterEach(() => vi.restoreAllMocks());
+
+  it("labels sample fixture data clearly", async () => {
+    await goTo("John 3", <App repository={sampleRepository()} />);
+    expect(screen.getByRole("note")).toHaveTextContent(/Sample data\..*not Scripture/);
+    expect(document.getElementById("v1")).toHaveTextContent("[Sample text, not Scripture] JHN 3:1");
+  });
+
+  it("explains a book missing from the translation", async () => {
+    await goTo("Romans 8", <App repository={sampleRepository()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("Romans isn’t included in SMP yet.");
+  });
+
+  it("explains a missing chapter and keeps the translation switcher available", async () => {
+    await goTo("John 2", <App repository={sampleRepository()} />);
+    expect(screen.getByRole("status")).toHaveTextContent("John 2 isn’t available in SMP.");
+    expect(screen.getByRole("button", { name: /Change translation/ })).toBeInTheDocument();
+  });
+
+  it("explains damaged data without crashing", async () => {
+    localStorage.setItem("versepath.translation", "sample-broken");
+    await goTo("Genesis 1", <App repository={sampleRepository()} />);
+    expect(screen.getByRole("status")).toHaveTextContent(/data for this book is damaged/);
+  });
+});
+
+describe("library and settings", () => {
+  it("lists installed and not-installed translations in the Library and lets the user choose", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Library" }));
+    const group = screen.getByRole("radiogroup", { name: "Translations" });
+    expect(within(group).getAllByRole("radio")).toHaveLength(2);
+    expect(within(group).getByRole("radio", { name: /World English Bible.*English/ })).toHaveAttribute(
+      "aria-checked",
+      "true",
+    );
+    expect(screen.getByRole("list", { name: "Not installed" })).toHaveTextContent(/സത്യവേദപുസ്തകം 1910/);
+
+    await user.click(within(group).getByRole("radio", { name: /IRV/ }));
+    expect(within(group).getByRole("radio", { name: /IRV/ })).toHaveAttribute("aria-checked", "true");
+    expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
+  });
+
+  it("sets the translation from Settings and shows sources and licences", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    await user.click(screen.getByRole("radio", { name: /IRV/ }));
+    expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
+    expect(screen.getByText(/creativecommons\.org\/licenses\/by-sa\/4\.0/)).toBeInTheDocument();
   });
 });

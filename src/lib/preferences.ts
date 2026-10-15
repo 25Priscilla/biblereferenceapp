@@ -1,5 +1,5 @@
 /**
- * Minimal preference storage. Phase 1 stores the theme only; reading
+ * Minimal preference storage: the theme and the active translation. Reading
  * preferences, history and the library are added in Phase 4.
  *
  * All storage access is guarded: WebViews can throw on localStorage access
@@ -23,6 +23,25 @@ export function loadTheme(): ThemePreference {
 export function saveTheme(theme: ThemePreference): void {
   try {
     localStorage.setItem(THEME_KEY, theme);
+  } catch {
+    /* ignore — preference just won't persist */
+  }
+}
+
+const TRANSLATION_KEY = "versepath.translation";
+
+/** The saved translation id, unvalidated: callers check it is still installed. */
+export function loadTranslationId(): string | null {
+  try {
+    return localStorage.getItem(TRANSLATION_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function saveTranslationId(id: string): void {
+  try {
+    localStorage.setItem(TRANSLATION_KEY, id);
   } catch {
     /* ignore — preference just won't persist */
   }

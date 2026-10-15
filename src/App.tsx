@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import type { BibleRepository } from "./bible/translations";
 import { BottomNav } from "./components/BottomNav";
 import { Sidebar } from "./components/Sidebar";
 import { NavigationProvider, useNavigation } from "./lib/navigation";
 import type { Route, TabName } from "./lib/navigation";
 import { applyTheme, loadTheme, saveTheme } from "./lib/preferences";
 import type { ThemePreference } from "./lib/preferences";
+import { TranslationProvider } from "./lib/translation";
 import { useMediaQuery, WIDE_QUERY } from "./lib/useMediaQuery";
 import { BooksScreen } from "./screens/BooksScreen";
 import { HomeScreen } from "./screens/HomeScreen";
@@ -61,10 +63,12 @@ function renderRoute(
   }
 }
 
-export default function App() {
+export default function App({ repository }: { repository?: BibleRepository } = {}) {
   return (
-    <NavigationProvider>
-      <Screens />
-    </NavigationProvider>
+    <TranslationProvider repository={repository}>
+      <NavigationProvider>
+        <Screens />
+      </NavigationProvider>
+    </TranslationProvider>
   );
 }

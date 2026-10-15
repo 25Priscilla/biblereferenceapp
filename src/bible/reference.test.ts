@@ -187,3 +187,40 @@ describe("formatReference", () => {
     }
   });
 });
+
+describe("Malayalam book names", () => {
+  it.each<[string, PassageRef]>([
+    ["യോഹന്നാന്‍ 3:16", { book: "JHN", chapter: 3, verse: 16 }], // old ZWJ chillu, as published
+    ["യോഹന്നാൻ 3:16", { book: "JHN", chapter: 3, verse: 16 }], // atomic chillu
+    ["യോഹ. 3:16", { book: "JHN", chapter: 3, verse: 16 }],
+    ["സങ്കീർത്തനങ്ങൾ 91:1-4", { book: "PSA", chapter: 91, verse: 1, verseEnd: 4 }],
+    ["സങ്കീ. 23", { book: "PSA", chapter: 23 }],
+    ["ഉല്‍പത്തി 1", { book: "GEN", chapter: 1 }],
+    ["ഉല്പ. 1:1", { book: "GEN", chapter: 1, verse: 1 }],
+    ["1 യോഹന്നാൻ 4:8", { book: "1JN", chapter: 4, verse: 8 }],
+    ["1 യോഹ. 4:8", { book: "1JN", chapter: 4, verse: 8 }],
+    ["അപ്പൊ. പ്ര. 2:38", { book: "ACT", chapter: 2, verse: 38 }],
+    ["യൂദാ 5", { book: "JUD", chapter: 1, verse: 5 }],
+    ["റോമർ", { book: "ROM", chapter: 1 }],
+  ])("%s", (input, expected) => {
+    expect(ok(input)).toEqual(expected);
+  });
+
+  it("folds old and atomic chillu encodings together", () => {
+    expect(normaliseBookName("യോഹന്നാന്‍")).toBe(normaliseBookName("യോഹന്നാൻ"));
+    expect(normaliseBookName("ഫിലിപ്പ്യര്‍")).toBe(normaliseBookName("ഫിലിപ്പ്യർ"));
+  });
+
+  it("accepts a unique prefix of a Malayalam name", () => {
+    expect(ok("യോഹന്നാ 1")).toEqual({ book: "JHN", chapter: 1 });
+  });
+
+  it("keeps the English parser unchanged", () => {
+    expect(ok("Jn 3.16")).toEqual({ book: "JHN", chapter: 3, verse: 16 });
+    err("John 22", "chapter-out-of-range");
+  });
+
+  it("rejects an unknown Malayalam word", () => {
+    err("പുസ്തകമില്ല 1", "unknown-book");
+  });
+});

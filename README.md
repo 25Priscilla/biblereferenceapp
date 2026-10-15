@@ -6,7 +6,7 @@ VersePath is a free mobile Bible app for pastors, preachers, Sunday school teach
 
 No account. No ads. No subscriptions.
 
-> **Status: Phase 2 (navigation).** Reference search, book abbreviations, chapter navigation and in-reader passage switching work. **No Bible translation is integrated yet.** The reader shows clearly labelled placeholder text that is not Scripture. See [Roadmap](#roadmap).
+> **Status: Phase 3 (translations).** Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, and references can be typed in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
 
 ## Tech stack
 
@@ -65,12 +65,18 @@ src/
   App.tsx              App shell and route switch
   main.tsx             Entry point: fonts, global CSS, theme applied before first paint
   styles/              tokens.css (design tokens, light/dark) and base.css (shared primitives)
-  components/          BottomNav, Sidebar, ReferenceSearch, BookNavigator, JumpSheet, PlaceholderNotice, Icon
+  components/          BottomNav, Sidebar, ReferenceSearch, BookNavigator, JumpSheet, TranslationMenu,
+                       TranslationList, PlaceholderNotice, Icon
   screens/             Home, Books, Reader, Library, Settings
   bible/               canon.ts (book IDs and metadata, no text), aliases.ts (abbreviations),
                        reference.ts (parse, validate, format), chapterNav.ts (previous/next), types.ts
-  fixtures/            Labelled placeholder data. Not Scripture.
-  lib/                 navigation (history-backed router), preferences (theme), useMediaQuery (breakpoints)
+  bible/translations/  catalog (licensed translations), repository (data access), book file validation,
+                       Malayalam book names
+  data/bibles/         Bundled per-book JSON for each translation (generated, do not edit)
+  lib/                 navigation (router), preferences (theme, translation), translation (active
+                       translation context), useChapter, useMediaQuery
+  test/                Test setup and labelled sample fixtures (not Scripture)
+scripts/               convert-vpl.mjs: converts eBible.org VPL files into data/bibles JSON
 src-tauri/             Tauri 2 Rust shell, config, capabilities and icons
 docs/                  DESIGN.md and TRANSLATIONS.md
 ```
@@ -87,17 +93,18 @@ The parser (`src/bible/reference.ts`) accepts:
 | `1 Cor 13`, `I Corinthians 13`, `First Cor 13`, `1co 13` | Numbered books written several ways |
 | `Jude 5` | Verse 5 of a single-chapter book |
 | `Revel 1` | A unique prefix of a book name |
+| `യോഹ. 3:16`, `യോഹന്നാൻ 3:16`, `സങ്കീ. 23` | Malayalam book names and abbreviations, as printed in the IRV |
 
 Invalid input gets a specific message: unknown books suggest the closest match ("Did you mean John?"), ambiguous abbreviations ("Ph") list the candidates, and chapters past the end of a book say how many chapters it has. Ranges that span chapters (`John 3:16-4:2`, `Genesis 1-3`) are not supported yet and say so. Verse upper bounds are checked by the reader against each translation's own verse counts, not by the parser.
 
 ## Adding Bible translations
 
-See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md). In short, no translation is added until its text comes from a verified source and its licence allows that use.
+See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) for the licence record, data format and conversion steps. In short, no translation is added until its text comes from a verified source and its licence allows offline use.
 
 ## Roadmap
 
 1. **Foundation** (done): app shell, design system, main screens
 2. **Navigation** (done): reference parser (John 3:16, Psalm 91:1-4, Genesis 1), book abbreviations, validation messages, previous/next chapter, in-reader jump. A verse *picker* waits for real verse counts in Phase 3; verses can already be typed.
-3. **Translations**: data format and loader, verified and licensed English and Malayalam texts
+3. **Translations** (done): offline per-book JSON data layer, WEB (English) and IRV (Malayalam), in-reader translation switching, verse and range selection, Malayalam reference search, translation choice remembered
 4. **Personal library**: favorites, history, labels, highlights, bookmarks, reading preferences, local persistence
 5. **Platform QA**: Android and iOS, accessibility, performance, offline behaviour
