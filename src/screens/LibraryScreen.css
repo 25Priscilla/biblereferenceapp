@@ -1,0 +1,14 @@
+.library__hint {
+  margin-bottom: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.library__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}

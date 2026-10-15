@@ -1,0 +1,35 @@
+.home__brand {
+  padding: var(--space-5) 0 var(--space-6);
+  text-align: center;
+}
+
+.home__wordmark {
+  font-family: var(--font-scripture);
+  font-size: var(--text-2xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--color-primary);
+}
+
+/* A short gold rule under the wordmark — the only ornament on the screen. */
+.home__wordmark::after {
+  content: "";
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin: var(--space-3) auto 0;
+  background: var(--color-accent);
+  border-radius: 2px;
+}
+
+.home__tagline {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.home__actions {
+  display: grid;
+  gap: var(--space-3);
+  margin-top: var(--space-4);
+}

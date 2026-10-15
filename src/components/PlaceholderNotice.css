@@ -1,0 +1,19 @@
+.placeholder-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-notice-bg);
+  border: 1px solid var(--color-notice-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-family: var(--font-ui);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+}
+
+.placeholder-notice svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-accent);
+}

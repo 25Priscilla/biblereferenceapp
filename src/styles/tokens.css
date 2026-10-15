@@ -1,0 +1,143 @@
+/*
+ * VersePath design tokens.
+ * Every colour, type size and spacing value used by the UI is defined here.
+ * Components reference tokens only — never raw hex values.
+ * See docs/DESIGN.md for rationale.
+ */
+
+:root {
+  /* Brand palette (raw) */
+  --vp-forest-900: #14291f;
+  --vp-forest-800: #1f3d2e;
+  --vp-forest-700: #2a5240;
+  --vp-forest-100: #e3ebe5;
+  --vp-ivory-50: #fdfaf3;
+  --vp-ivory-100: #faf6ec;
+  --vp-ivory-200: #f1ead9;
+  --vp-gold-500: #b8914a;
+  --vp-gold-600: #94723a;
+  --vp-ink-900: #1c1f1d;
+  --vp-ink-600: #4d554f;
+  --vp-ink-400: #7a827c;
+
+  /* Semantic colours — light theme */
+  --color-bg: var(--vp-ivory-100);
+  --color-surface: var(--vp-ivory-50);
+  --color-surface-sunken: var(--vp-ivory-200);
+  --color-text: var(--vp-ink-900);
+  --color-text-muted: var(--vp-ink-600);
+  --color-text-subtle: var(--vp-ink-400);
+  --color-border: #e2d9c4;
+  --color-primary: var(--vp-forest-800);
+  --color-primary-hover: var(--vp-forest-700);
+  --color-on-primary: var(--vp-ivory-50);
+  --color-primary-soft: var(--vp-forest-100);
+  --color-accent: var(--vp-gold-600);
+  --color-verse-number: var(--vp-gold-600);
+  --color-focus: var(--vp-gold-500);
+  --color-notice-bg: #f6eed8;
+  --color-notice-border: #e3cf9f;
+  --color-scrim: rgb(20 41 31 / 0.4);
+
+  /* Typography */
+  --font-ui: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-scripture: "Literata", "Noto Serif Malayalam", Georgia, "Times New Roman", serif;
+
+  --text-xs: 0.8125rem;   /* 13px */
+  --text-sm: 0.9375rem;   /* 15px */
+  --text-md: 1.0625rem;   /* 17px — UI body */
+  --text-lg: 1.25rem;     /* 20px */
+  --text-xl: 1.5rem;      /* 24px */
+  --text-2xl: 2rem;       /* 32px */
+
+  /* Reader typography (user-adjustable in Phase 4) */
+  --reader-font-size: 1.25rem;
+  --reader-line-height: 1.75;
+
+  /* Spacing (4px base) */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+  --space-7: 3rem;
+
+  /* Shape & elevation */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-sm: 0 1px 2px rgb(20 41 31 / 0.06);
+  --shadow-md: 0 4px 16px rgb(20 41 31 / 0.08);
+
+  /* Layout */
+  --touch-target: 48px;
+  --content-max: 40rem;
+  --reader-max: 36rem;
+  --nav-height: 64px;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  --duration-fast: 120ms;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+
+  color-scheme: light;
+}
+
+/* Dark theme values, shared by the explicit and system-preference selectors. */
+:root[data-theme="dark"] {
+  --color-bg: #101a15;
+  --color-surface: #16231c;
+  --color-surface-sunken: #0c140f;
+  --color-text: #ece6d6;
+  --color-text-muted: #b5b09f;
+  --color-text-subtle: #8a877b;
+  --color-border: #2a3a31;
+  --color-primary: #8fbf9f;
+  --color-primary-hover: #a6cfb3;
+  --color-on-primary: #0f1a14;
+  --color-primary-soft: #1f3328;
+  --color-accent: #d2b073;
+  --color-verse-number: #d2b073;
+  --color-focus: #d2b073;
+  --color-notice-bg: #2a2617;
+  --color-notice-border: #5a4d2a;
+  --color-scrim: rgb(0 0 0 / 0.55);
+  --shadow-sm: none;
+  --shadow-md: 0 4px 16px rgb(0 0 0 / 0.35);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]):not([data-theme="dark"]) {
+    --color-bg: #101a15;
+    --color-surface: #16231c;
+    --color-surface-sunken: #0c140f;
+    --color-text: #ece6d6;
+    --color-text-muted: #b5b09f;
+    --color-text-subtle: #8a877b;
+    --color-border: #2a3a31;
+    --color-primary: #8fbf9f;
+    --color-primary-hover: #a6cfb3;
+    --color-on-primary: #0f1a14;
+    --color-primary-soft: #1f3328;
+    --color-accent: #d2b073;
+    --color-verse-number: #d2b073;
+    --color-focus: #d2b073;
+    --color-notice-bg: #2a2617;
+    --color-notice-border: #5a4d2a;
+    --color-scrim: rgb(0 0 0 / 0.55);
+    --shadow-sm: none;
+    --shadow-md: 0 4px 16px rgb(0 0 0 / 0.35);
+    color-scheme: dark;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-fast: 0ms;
+  }
+}

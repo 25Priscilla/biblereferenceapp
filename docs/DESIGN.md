@@ -1,0 +1,37 @@
+# VersePath design system
+
+The goal is a peaceful, trustworthy interface that gets out of the way of Scripture.
+
+## Principles
+
+1. **Scripture first.** The reader shows text and a slim top bar, nothing else. The tab bar is hidden there.
+2. **One obvious action per screen.** Home leads with reference search, Books with the book list, the Reader with the text.
+3. **Quiet ornament.** Gold is an accent, not a fill. It is used for verse numbers, focus rings, the active translation and a single rule under the wordmark. There are no gradients and no decorative imagery.
+4. **Few cards.** Grouped lists and plain sections are preferred over stacks of cards.
+5. **Accessible by default.** Touch targets are at least 48px, focus is visible, colour is never the only signal, motion is reduced when the system asks, and safe-area insets are respected.
+
+## Palette
+
+| Token | Light | Dark | Use |
+| --- | --- | --- | --- |
+| `--color-bg` | `#faf6ec` warm ivory | `#101a15` | App background |
+| `--color-surface` | `#fdfaf3` | `#16231c` | Lists, inputs |
+| `--color-text` | `#1c1f1d` | `#ece6d6` | Body and Scripture |
+| `--color-primary` | `#1f3d2e` forest green | `#8fbf9f` | Primary buttons, headings, active tab |
+| `--color-accent` | `#94723a` gold | `#d2b073` | Verse numbers, focus, ornament |
+
+Components use **semantic tokens only**, never raw values. Dark mode is chosen by the system by default and can be overridden in Settings (`<html data-theme="light|dark">`).
+
+## Typography
+
+- **Scripture:** Literata, a serif designed for long-form screen reading. It falls back to Noto Serif Malayalam (to be bundled in Phase 3), then Georgia.
+- **Interface:** Inter Variable.
+- Both are bundled locally through `@fontsource`, so they work offline and never call a font CDN.
+- Reader defaults are 20px with a 1.75 line height (`--reader-font-size`, `--reader-line-height`). These become user-adjustable in Phase 4.
+
+## Layout
+
+- Single column, at most 40rem wide for app screens and 36rem for the reader's text measure.
+- 4px spacing scale (`--space-1` to `--space-7`).
+- A bottom tab bar (Home, Books, Library, Settings) within thumb reach.
+- Navigation is stored in `history.state`, so the Android back gesture and browser back work naturally.

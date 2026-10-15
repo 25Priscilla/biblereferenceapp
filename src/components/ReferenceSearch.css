@@ -1,0 +1,62 @@
+.ref-search__field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 56px;
+  padding: var(--space-1) var(--space-1) var(--space-1) var(--space-4);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-md);
+}
+
+.ref-search__field:focus-within {
+  border-color: var(--color-focus);
+}
+
+.ref-search__icon {
+  display: flex;
+  color: var(--color-text-subtle);
+}
+
+.ref-search__input {
+  flex: 1;
+  min-width: 0;
+  height: var(--touch-target);
+  border: 0;
+  background: transparent;
+  font-size: var(--text-md);
+  outline: none;
+}
+
+.ref-search__input::placeholder {
+  color: var(--color-text-subtle);
+}
+
+/* The field's border shows focus; avoid a double ring on the input itself. */
+.ref-search__input:focus-visible {
+  outline: none;
+}
+
+.ref-search__input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.ref-search__go {
+  min-width: var(--touch-target);
+  height: var(--touch-target);
+  padding: 0 var(--space-4);
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 600;
+}
+
+.ref-search__message {
+  min-height: 1.5em;
+  margin-top: var(--space-2);
+  padding: 0 var(--space-4);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}
