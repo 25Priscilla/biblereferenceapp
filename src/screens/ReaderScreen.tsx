@@ -5,14 +5,21 @@ import type { PassageRef } from "../bible/types";
 import { BookNavigator } from "../components/BookNavigator";
 import { Icon } from "../components/Icon";
 import { JumpSheet } from "../components/JumpSheet";
+import { NoteEditor } from "../components/NoteEditor";
 import { ParallelText } from "../components/ParallelText";
 import { PlaceholderNotice } from "../components/PlaceholderNotice";
 import { ReferenceSearch } from "../components/ReferenceSearch";
 import { TranslationMenu } from "../components/TranslationMenu";
+import { VerseActions } from "../components/VerseActions";
+import { NO_ANNOTATION, VerseMarkers, verseLabel } from "../components/VerseMarkers";
+import type { VerseAnnotation } from "../components/VerseMarkers";
 import { useNavigation } from "../lib/navigation";
+import { useStudy } from "../lib/study";
 import { useTranslation } from "../lib/translation";
 import { useChapter } from "../lib/useChapter";
 import { PANEL_QUERY, useMediaQuery, WIDE_QUERY } from "../lib/useMediaQuery";
+import { chapterHighlights } from "../study/model";
+import type { Note, VerseSpan } from "../study/types";
 import "./ReaderScreen.css";
 
 interface Selection {
@@ -50,6 +57,8 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const wide = useMediaQuery(WIDE_QUERY);
   const withPanel = useMediaQuery(PANEL_QUERY);
   const [jumpOpen, setJumpOpen] = useState(false);
+  const [noteSpan, setNoteSpan] = useState<VerseSpan | null>(null);
+  const { highlights, bookmarks, notes, recordReading } = useStudy();
   const [selection, setSelection] = useState<Selection | null>(() =>
     passage.verse === undefined ? null : { start: passage.verse, end: passage.verseEnd ?? passage.verse },
   );
@@ -82,12 +91,24 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     return () => window.removeEventListener("keydown", onKey);
   }, [wide, go, prev, next]);
 
+  // Reading history: the passage as opened, then the latest selection in it.
+  const validPassage = book !== undefined && passage.chapter >= 1 && passage.chapter <= book.chapters;
+  useEffect(() => {
+    if (!validPassage) return;
+    const ref: PassageRef = { book: passage.book, chapter: passage.chapter };
+    if (selection) {
+      ref.verse = selection.start;
+      if (selection.end !== selection.start) ref.verseEnd = selection.end;
+    }
+    recordReading(ref);
+  }, [validPassage, passage.book, passage.chapter, selection, recordReading]);
+
   useEffect(() => {
     if (passage.verse === undefined || !ready) return;
     document.getElementById(`v${passage.verse}`)?.scrollIntoView?.({ block: "start" });
   }, [passage.verse, ready, isParallel]);
 
-  if (!book || passage.chapter < 1 || passage.chapter > book.chapters) {
+  if (!book || !validPassage) {
     return (
       <div className="reader__missing">
         <p>That passage could not be found.</p>
@@ -105,6 +126,24 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const isSelected = (n: number) => selection !== null && n >= selection.start && n <= selection.end;
 
   const select = (n: number) => setSelection((s) => nextSelection(s, n));
+  const selectedSpan: VerseSpan | null = selection
+    ? { book: book.id, chapter: passage.chapter, verse: selection.start, verseEnd: selection.end }
+    : null;
+
+  // Study marks are keyed by verse number, so they apply to every translation
+  // and to both columns in parallel reading.
+  const colours = chapterHighlights(highlights, book.id, passage.chapter);
+  const annotations = new Map<number, VerseAnnotation>();
+  const annotationAt = (n: number) => {
+    let a = annotations.get(n);
+    if (!a) annotations.set(n, (a = { bookmarked: false, notes: [] }));
+    return a;
+  };
+  for (const [n, color] of colours) annotationAt(n).highlight = color;
+  for (const b of bookmarks) if (b.book === book.id && b.chapter === passage.chapter) annotationAt(b.verse).bookmarked = true;
+  for (const note of notes) if (note.book === book.id && note.chapter === passage.chapter) annotationAt(note.verse).notes.push(note);
+  const annotate = (n: number) => annotations.get(n) ?? NO_ANNOTATION;
+  const openNote = (note: Note) => setNoteSpan(note);
   const requestedEnd = passage.verseEnd ?? passage.verse;
 
   let content;
@@ -146,6 +185,8 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
           ]}
           isSelected={isSelected}
           onSelect={select}
+          annotate={annotate}
+          onOpenNote={openNote}
         />
         {[translation, parallel].map(
           (t) =>
@@ -196,12 +237,13 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
                 key={number}
                 id={`v${number}`}
                 className={isSelected(number) ? "verse verse--target" : "verse"}
+                data-hl={annotate(number).highlight}
                 onClick={() => select(number)}
               >
                 <button
                   type="button"
                   className="verse__number"
-                  aria-label={`Verse ${number}`}
+                  aria-label={verseLabel(number, annotate(number))}
                   aria-pressed={isSelected(number)}
                   onClick={(e) => {
                     e.stopPropagation();
@@ -211,6 +253,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
                   {number}
                 </button>
                 {text}
+                <VerseMarkers annotation={annotate(number)} onOpenNote={openNote} />
               </p>
             ),
           )}
@@ -297,13 +340,12 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
 
         {content}
 
-        {selection && ready && anyLoaded && (
-          <div className="reader__selection" role="status">
-            <span>{formatReference(shownRef)} selected</span>
-            <button type="button" className="btn btn--secondary" onClick={() => setSelection(null)}>
-              Clear
-            </button>
-          </div>
+        {selectedSpan && ready && anyLoaded && (
+          <VerseActions
+            span={selectedSpan}
+            onClear={() => setSelection(null)}
+            onOpenNote={() => setNoteSpan(selectedSpan)}
+          />
         )}
 
         <nav className="chapter-pager" aria-label="Chapter navigation">
@@ -351,6 +393,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
       )}
       {article}
       {jumpOpen && <JumpSheet current={passage} onClose={() => setJumpOpen(false)} />}
+      {noteSpan && <NoteEditor span={noteSpan} onClose={() => setNoteSpan(null)} />}
     </div>
   );
 }

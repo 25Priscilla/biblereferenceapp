@@ -32,7 +32,8 @@ p {
 }
 
 button,
-input {
+input,
+textarea {
   font: inherit;
   color: inherit;
 }
@@ -171,6 +172,28 @@ button {
   background: var(--color-primary-soft);
 }
 
+.btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+/* Confirms a permanent deletion. */
+.btn--danger {
+  background: var(--color-danger);
+  color: var(--color-on-primary);
+}
+
+/* Starts a deletion; quieter than the confirm step. */
+.btn--text-danger {
+  background: transparent;
+  color: var(--color-danger);
+  padding: 0 var(--space-3);
+}
+
+.btn--text-danger:hover {
+  background: var(--color-surface-sunken);
+}
+
 .btn--block {
   width: 100%;
 }
@@ -245,7 +268,8 @@ button {
 }
 
 .segmented__option[aria-pressed="true"],
-.segmented__option[aria-checked="true"] {
+.segmented__option[aria-checked="true"],
+.segmented__option[aria-selected="true"] {
   background: var(--color-surface);
   color: var(--color-primary);
   box-shadow: var(--shadow-sm);
@@ -260,4 +284,26 @@ button {
   border-radius: var(--radius-pill);
   font-size: var(--text-sm);
   color: var(--color-text-muted);
+}
+
+/* ---------- Highlight colours (see tokens.css) ---------- */
+
+[data-hl="yellow"] {
+  --hl-bg: var(--color-hl-yellow);
+  --hl-swatch: var(--color-hl-yellow-swatch);
+}
+
+[data-hl="green"] {
+  --hl-bg: var(--color-hl-green);
+  --hl-swatch: var(--color-hl-green-swatch);
+}
+
+[data-hl="blue"] {
+  --hl-bg: var(--color-hl-blue);
+  --hl-swatch: var(--color-hl-blue-swatch);
+}
+
+[data-hl="pink"] {
+  --hl-bg: var(--color-hl-pink);
+  --hl-swatch: var(--color-hl-pink-swatch);
 }

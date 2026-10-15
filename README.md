@@ -6,7 +6,7 @@ VersePath is a free mobile Bible app for pastors, preachers, Sunday school teach
 
 No account. No ads. No subscriptions.
 
-> **Status: Phase 3 (translations).** Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, read two translations in parallel, and type references in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
+> **Status: Phase 4 (personal study tools).** Bookmarks, highlights, private notes and recent reading are saved on the device. Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, read two translations in parallel, and type references in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
 
 ## Tech stack
 
@@ -66,7 +66,8 @@ src/
   main.tsx             Entry point: fonts, global CSS, theme applied before first paint
   styles/              tokens.css (design tokens, light/dark) and base.css (shared primitives)
   components/          BottomNav, Sidebar, ReferenceSearch, BookNavigator, JumpSheet, TranslationMenu,
-                       TranslationList, ParallelText, PlaceholderNotice, Icon
+                       TranslationList, ParallelText, PlaceholderNotice, Icon, Sheet (modal sheet),
+                       VerseActions, VerseMarkers, NoteEditor, StudyLists
   screens/             Home, Books, Reader, Library, Settings
   bible/               canon.ts (book IDs and metadata, no text), aliases.ts (abbreviations),
                        reference.ts (parse, validate, format), chapterNav.ts (previous/next), types.ts
@@ -74,7 +75,10 @@ src/
                        Malayalam book names
   data/bibles/         Bundled per-book JSON for each translation (generated, do not edit)
   lib/                 navigation (router), preferences (theme, translation), translation (active
-                       translation context), useChapter, useMediaQuery
+                       translation context), study (study data context), useChapter, usePassageText,
+                       useMediaQuery
+  study/               Bookmarks, highlights, notes and history: types, pure model functions and
+                       validated local storage
   test/                Test setup and labelled sample fixtures (not Scripture)
 scripts/               convert-vpl.mjs: converts eBible.org VPL files into data/bibles JSON
 src-tauri/             Tauri 2 Rust shell, config, capabilities and icons
@@ -101,6 +105,18 @@ Invalid input gets a specific message: unknown books suggest the closest match (
 
 The columns button in the reader toolbar shows two translations verse by verse. They sit side by side when there is room and as stacked pairs on phones. Each column has its own translation selector, and choosing the other column's translation swaps the two. Chapter navigation, the passage and verse selection are shared by both columns. Every verse number is a single row, so a verse that one translation omits shows as "not included" in that column, and the other column never shifts. The reading mode and both translations are remembered after a restart. You can also set the reading mode in **Settings → Reading mode**.
 
+## Study tools
+
+Tap a verse number (or a verse) in the reader to select it; tap another to select a range. A bar appears with three actions:
+
+- **Bookmark** saves the verse or range. Press it again to remove the bookmark. The same passage is never saved twice.
+- **Highlight** opens four colours (yellow, green, blue, pink) and **Remove highlight**. Highlights cover whole verses and are shared by both columns in parallel reading.
+- **Note** opens a plain-text editor with Save and Cancel. An existing note can be edited or deleted (deleting asks first). Any script works, including Malayalam.
+
+Verses with a bookmark or note show a small marker; tapping the note marker opens the note. The **Library** has Bookmarks, Highlights, Notes and Recent tabs. Every item opens its passage, and items can be removed there (notes through their editor). **Home** shows "Continue reading", the latest few passages and bookmarks.
+
+Everything is stored by book, chapter and verse number, never by translation, so it stays on the same passage whichever translation is shown. Previews use the current translation. Data lives only in the app's local storage (`versepath.bookmarks`, `versepath.highlights`, `versepath.notes`, `versepath.history`), in a versioned format that is validated on load. Invalid records are skipped, and an unreadable value is kept under `<key>.backup` instead of being discarded. Nothing is sent to a server.
+
 ## Adding Bible translations
 
 See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) for the licence record, data format and conversion steps. In short, no translation is added until its text comes from a verified source and its licence allows offline use.
@@ -110,5 +126,5 @@ See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) for the licence record, data fo
 1. **Foundation** (done): app shell, design system, main screens
 2. **Navigation** (done): reference parser (John 3:16, Psalm 91:1-4, Genesis 1), book abbreviations, validation messages, previous/next chapter, in-reader jump. A verse *picker* waits for real verse counts in Phase 3; verses can already be typed.
 3. **Translations** (done): offline per-book JSON data layer, WEB (English) and IRV (Malayalam), in-reader translation switching, verse and range selection, Malayalam reference search, translation choice remembered
-4. **Personal library**: favorites, history, labels, highlights, bookmarks, reading preferences, local persistence
+4. **Personal study tools** (done): bookmarks, highlights, notes, reading history, Library tabs, local persistence. Labels and adjustable reading preferences are not built yet.
 5. **Platform QA**: Android and iOS, accessibility, performance, offline behaviour

@@ -6,6 +6,7 @@ import { NavigationProvider, useNavigation } from "./lib/navigation";
 import type { Route, TabName } from "./lib/navigation";
 import { applyTheme, loadTheme, saveTheme } from "./lib/preferences";
 import type { ThemePreference } from "./lib/preferences";
+import { StudyProvider } from "./lib/study";
 import { TranslationProvider } from "./lib/translation";
 import { useMediaQuery, WIDE_QUERY } from "./lib/useMediaQuery";
 import { BooksScreen } from "./screens/BooksScreen";
@@ -66,9 +67,11 @@ function renderRoute(
 export default function App({ repository }: { repository?: BibleRepository } = {}) {
   return (
     <TranslationProvider repository={repository}>
-      <NavigationProvider>
-        <Screens />
-      </NavigationProvider>
+      <StudyProvider>
+        <NavigationProvider>
+          <Screens />
+        </NavigationProvider>
+      </StudyProvider>
     </TranslationProvider>
   );
 }

@@ -41,6 +41,16 @@
   --color-danger: #9b3b2f;
   --color-highlight-target: rgb(184 145 74 / 0.14);
 
+  /* Personal highlights: translucent so Scripture keeps full contrast. */
+  --color-hl-yellow: rgb(240 196 60 / 0.34);
+  --color-hl-green: rgb(110 175 110 / 0.28);
+  --color-hl-blue: rgb(100 155 225 / 0.26);
+  --color-hl-pink: rgb(230 120 145 / 0.24);
+  --color-hl-yellow-swatch: #e6b93a;
+  --color-hl-green-swatch: #73ad73;
+  --color-hl-blue-swatch: #6d9ad6;
+  --color-hl-pink-swatch: #d9839a;
+
   /* Typography */
   --font-ui: "Inter Variable", "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --font-scripture: "Literata", "Noto Serif Malayalam", Georgia, "Times New Roman", serif;
@@ -112,6 +122,14 @@
   --color-scrim: rgb(0 0 0 / 0.55);
   --color-danger: #eba393;
   --color-highlight-target: rgb(210 176 115 / 0.12);
+  --color-hl-yellow: rgb(220 180 60 / 0.26);
+  --color-hl-green: rgb(100 170 115 / 0.24);
+  --color-hl-blue: rgb(95 145 220 / 0.27);
+  --color-hl-pink: rgb(220 110 140 / 0.24);
+  --color-hl-yellow-swatch: #d8b24a;
+  --color-hl-green-swatch: #74b07f;
+  --color-hl-blue-swatch: #719be0;
+  --color-hl-pink-swatch: #d98aa2;
   --shadow-sm: none;
   --shadow-md: 0 4px 16px rgb(0 0 0 / 0.35);
   color-scheme: dark;
@@ -136,8 +154,16 @@
     --color-notice-bg: #2a2617;
     --color-notice-border: #5a4d2a;
     --color-scrim: rgb(0 0 0 / 0.55);
-  --color-danger: #eba393;
-  --color-highlight-target: rgb(210 176 115 / 0.12);
+    --color-danger: #eba393;
+    --color-highlight-target: rgb(210 176 115 / 0.12);
+    --color-hl-yellow: rgb(220 180 60 / 0.26);
+    --color-hl-green: rgb(100 170 115 / 0.24);
+    --color-hl-blue: rgb(95 145 220 / 0.27);
+    --color-hl-pink: rgb(220 110 140 / 0.24);
+    --color-hl-yellow-swatch: #d8b24a;
+    --color-hl-green-swatch: #74b07f;
+    --color-hl-blue-swatch: #719be0;
+    --color-hl-pink-swatch: #d98aa2;
     --shadow-sm: none;
     --shadow-md: 0 4px 16px rgb(0 0 0 / 0.35);
     color-scheme: dark;

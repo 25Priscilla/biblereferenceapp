@@ -20,6 +20,8 @@ The goal is a peaceful, trustworthy interface that gets out of the way of Script
 | `--color-primary` | `#1f3d2e` forest green | `#8fbf9f` | Primary buttons, headings, active tab |
 | `--color-accent` | `#94723a` gold | `#d2b073` | Verse numbers, focus, ornament |
 
+Personal highlights use four translucent colours (`--color-hl-yellow|green|blue|pink`, with solid `-swatch` variants for the picker), tuned separately for light and dark so Scripture keeps full contrast. A highlighted verse that is also selected keeps its colour and gains the gold selection edge. Highlights are never the only signal: the verse number's accessible name says "highlighted yellow", and the picker rings the current colour.
+
 Components use **semantic tokens only**, never raw values. Dark mode is chosen by the system by default and can be overridden in Settings (`<html data-theme="light|dark">`).
 
 ## Typography

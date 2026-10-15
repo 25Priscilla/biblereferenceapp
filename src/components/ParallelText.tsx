@@ -1,6 +1,9 @@
 import type { ChapterResult } from "../bible/translations";
 import type { TranslationInfo } from "../bible/types";
+import type { Note } from "../study/types";
 import { TranslationMenu } from "./TranslationMenu";
+import { NO_ANNOTATION, VerseMarkers, verseLabel } from "./VerseMarkers";
+import type { VerseAnnotation } from "./VerseMarkers";
 import "./ParallelText.css";
 
 export interface ParallelColumn {
@@ -17,16 +20,21 @@ export interface ParallelColumn {
  * is one row holding both translations, so the columns can never drift
  * apart: a verse one translation omits (or numbers differently) shows as
  * "not included" in that column instead of shifting the text. Side by side
- * when there is room, stacked pairs on narrow screens.
+ * when there is room, stacked pairs on narrow screens. Highlights, bookmarks
+ * and notes belong to the verse row, so both columns always share them.
  */
 export function ParallelText({
   columns,
   isSelected,
   onSelect,
+  annotate = () => NO_ANNOTATION,
+  onOpenNote = () => {},
 }: {
   columns: [ParallelColumn, ParallelColumn];
   isSelected: (verse: number) => boolean;
   onSelect: (verse: number) => void;
+  annotate?: (verse: number) => VerseAnnotation;
+  onOpenNote?: (note: Note) => void;
 }) {
   const texts = columns.map(({ result }) => {
     const byNumber = new Map<number, string>();
@@ -60,20 +68,24 @@ export function ParallelText({
             key={n}
             id={`v${n}`}
             className={isSelected(n) ? "pverse verse--target" : "pverse"}
+            data-hl={annotate(n).highlight}
             onClick={() => onSelect(n)}
           >
-            <button
-              type="button"
-              className="verse__number pverse__number"
-              aria-label={`Verse ${n}`}
-              aria-pressed={isSelected(n)}
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect(n);
-              }}
-            >
-              {n}
-            </button>
+            <div className="pverse__gutter">
+              <button
+                type="button"
+                className="verse__number pverse__number"
+                aria-label={verseLabel(n, annotate(n))}
+                aria-pressed={isSelected(n)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect(n);
+                }}
+              >
+                {n}
+              </button>
+              <VerseMarkers annotation={annotate(n)} onOpenNote={onOpenNote} />
+            </div>
             {columns.map((col, i) => {
               const text = texts[i]!.get(n);
               if (!col.result.ok) return <div key={i} className="pverse__cell" aria-hidden="true" />;

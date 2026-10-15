@@ -1,53 +1,7 @@
-.jump-sheet {
-  position: fixed;
-  inset: 0;
-  z-index: 50;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  background: var(--color-scrim);
-}
-
-.jump-sheet__panel {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
-  width: 100%;
-  max-width: 36rem;
-  max-height: min(88dvh, 44rem);
-  padding: var(--space-3) var(--space-4) calc(var(--space-4) + var(--safe-bottom));
-  background: var(--color-bg);
-  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
-  box-shadow: var(--shadow-md);
-}
-
-.jump-sheet__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.jump-sheet__title {
-  font-size: var(--text-lg);
-  font-weight: 650;
-}
-
 .jump-sheet__browse {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   padding-top: var(--space-1);
-}
-
-@media (min-width: 600px) {
-  .jump-sheet {
-    align-items: center;
-    padding: var(--space-5);
-  }
-
-  .jump-sheet__panel {
-    border-radius: var(--radius-lg);
-    padding-bottom: var(--space-4);
-  }
 }

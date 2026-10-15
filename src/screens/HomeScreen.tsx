@@ -1,6 +1,10 @@
+import { formatReference } from "../bible/reference";
 import { ReferenceSearch } from "../components/ReferenceSearch";
 import { Icon } from "../components/Icon";
+import { BookmarkList, RecentList } from "../components/StudyLists";
 import { useNavigation } from "../lib/navigation";
+import { useStudy } from "../lib/study";
+import { historyToRef } from "../study/model";
 import { useMediaQuery, WIDE_QUERY } from "../lib/useMediaQuery";
 import "./HomeScreen.css";
 
@@ -8,6 +12,8 @@ export function HomeScreen() {
   const { navigate } = useNavigation();
   // On wide screens the wordmark lives in the sidebar, so Home leads with the task.
   const wide = useMediaQuery(WIDE_QUERY);
+  const { history, bookmarks } = useStudy();
+  const last = history[0] ? historyToRef(history[0]) : null;
 
   return (
     <div className="home">
@@ -27,14 +33,13 @@ export function HomeScreen() {
       </div>
 
       <div className="home__actions">
-        {/* Becomes "Continue reading" with the last position once history lands (Phase 4). */}
         <button
           type="button"
           className="btn btn--primary"
-          onClick={() => navigate({ name: "reader", ref: { book: "GEN", chapter: 1 } })}
+          onClick={() => navigate({ name: "reader", ref: last ?? { book: "GEN", chapter: 1 } })}
         >
           <Icon name="play" size={18} />
-          Start reading · Genesis 1
+          {last ? `Continue reading · ${formatReference(last)}` : "Start reading · Genesis 1"}
         </button>
         <button
           type="button"
@@ -53,18 +58,30 @@ export function HomeScreen() {
               Recently opened
             </h2>
           </div>
-          <p className="empty-state">Passages you open will appear here.</p>
+          <RecentList limit={4} labelledBy="home-recent" />
+          {history.length > 4 && <SeeAll />}
         </section>
 
-        <section aria-labelledby="home-favorites">
+        <section aria-labelledby="home-bookmarks">
           <div className="section__header">
-            <h2 id="home-favorites" className="section__title">
-              Favorites
+            <h2 id="home-bookmarks" className="section__title">
+              Bookmarks
             </h2>
           </div>
-          <p className="empty-state">Save a passage to keep it close at hand.</p>
+          <BookmarkList limit={3} labelledBy="home-bookmarks" />
+          {bookmarks.length > 3 && <SeeAll />}
         </section>
       </div>
     </div>
+  );
+}
+
+function SeeAll() {
+  const { navigate } = useNavigation();
+  return (
+    <button type="button" className="home__see-all" onClick={() => navigate({ name: "library" })}>
+      See all in Library
+      <Icon name="chevron" size={16} />
+    </button>
   );
 }

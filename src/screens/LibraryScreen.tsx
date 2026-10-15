@@ -1,20 +1,87 @@
 /**
- * Personal library. Translations are chosen here; favorites, history,
- * labels and local persistence are built in Phase 4.
+ * Personal library: saved study items (bookmarks, highlights, notes and
+ * recent reading) in one tabbed section, then the translations.
  */
 
+import { useRef, useState } from "react";
+import type { KeyboardEvent } from "react";
 import { PLANNED_TRANSLATIONS } from "../bible/translations";
+import { BookmarkList, HighlightList, NoteList, RecentList } from "../components/StudyLists";
 import { TranslationList } from "../components/TranslationList";
 import "./LibraryScreen.css";
 
 const EXAMPLE_LABELS = ["Sermon", "Prayer", "Study"];
 
+const TABS = [
+  { id: "bookmarks", label: "Bookmarks" },
+  { id: "highlights", label: "Highlights" },
+  { id: "notes", label: "Notes" },
+  { id: "recent", label: "Recent" },
+] as const;
+
+type TabId = (typeof TABS)[number]["id"];
+
 export function LibraryScreen() {
+  const [tab, setTab] = useState<TabId>("bookmarks");
+  const tabRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Arrow keys move between tabs, as in any tab list.
+  const onTabKey = (e: KeyboardEvent) => {
+    const index = TABS.findIndex((t) => t.id === tab);
+    let next = index;
+    if (e.key === "ArrowRight") next = (index + 1) % TABS.length;
+    else if (e.key === "ArrowLeft") next = (index - 1 + TABS.length) % TABS.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = TABS.length - 1;
+    else return;
+    e.preventDefault();
+    const id = TABS[next]!.id;
+    setTab(id);
+    tabRefs.current[id]?.focus();
+  };
+
+  const panelLabel = `lib-tab-${tab}`;
+
   return (
     <div>
       <h1 className="screen-title">Library</h1>
 
-      <section aria-labelledby="lib-translations">
+      <section aria-labelledby="lib-study">
+        <div className="section__header">
+          <h2 id="lib-study" className="section__title">
+            Your study
+          </h2>
+          <span className="list__meta">Saved on this device</span>
+        </div>
+        <div className="segmented library__tabs" role="tablist" aria-labelledby="lib-study" onKeyDown={onTabKey}>
+          {TABS.map((t) => (
+            <button
+              key={t.id}
+              ref={(el) => {
+                tabRefs.current[t.id] = el;
+              }}
+              id={`lib-tab-${t.id}`}
+              type="button"
+              role="tab"
+              className="segmented__option"
+              aria-selected={tab === t.id}
+              aria-controls="lib-tabpanel"
+              tabIndex={tab === t.id ? 0 : -1}
+              onClick={() => setTab(t.id)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+        <div id="lib-tabpanel" role="tabpanel" aria-labelledby={panelLabel} className="library__panel">
+          {tab === "bookmarks" && <BookmarkList labelledBy={panelLabel} />}
+          {tab === "highlights" && <HighlightList labelledBy={panelLabel} />}
+          {tab === "notes" && <NoteList labelledBy={panelLabel} />}
+          {tab === "recent" && <RecentList labelledBy={panelLabel} />}
+        </div>
+      </section>
+
+      <section className="section" aria-labelledby="lib-translations">
         <div className="section__header">
           <h2 id="lib-translations" className="section__title">
             Translations
@@ -43,24 +110,6 @@ export function LibraryScreen() {
             </ul>
           </>
         )}
-      </section>
-
-      <section className="section" aria-labelledby="lib-favorites">
-        <div className="section__header">
-          <h2 id="lib-favorites" className="section__title">
-            Favorites
-          </h2>
-        </div>
-        <p className="empty-state">No saved passages yet.</p>
-      </section>
-
-      <section className="section" aria-labelledby="lib-recent">
-        <div className="section__header">
-          <h2 id="lib-recent" className="section__title">
-            History
-          </h2>
-        </div>
-        <p className="empty-state">Your reading history will appear here.</p>
       </section>
 
       <section className="section" aria-labelledby="lib-labels">

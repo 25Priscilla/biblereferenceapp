@@ -162,22 +162,55 @@
   color: var(--color-text-subtle);
 }
 
-.reader__selection {
-  position: sticky;
-  bottom: calc(var(--space-3) + var(--safe-bottom));
-  z-index: 4;
-  display: flex;
+/* ---------- Study marks ---------- */
+
+/* Personal highlights apply to the whole verse row, so in parallel reading
+   both translations share the colour. */
+.verse[data-hl],
+.pverse[data-hl] {
+  background: var(--hl-bg);
+}
+
+/* A highlighted verse that is also selected keeps its colour; the gold
+   edge and ring show the selection. */
+.verse--target[data-hl] {
+  background: var(--hl-bg);
+  box-shadow:
+    inset 3px 0 0 var(--color-accent),
+    inset 0 0 0 1px var(--color-accent);
+}
+
+.verse-markers {
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-3);
-  margin-top: var(--space-4);
-  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  gap: 2px;
+  margin-left: 0.3em;
+  vertical-align: middle;
+  line-height: 0;
+  color: var(--color-accent);
+}
+
+.verse-markers__bookmark {
+  display: inline-flex;
+}
+
+/* Comfortable touch target without stretching the line. */
+.verse-markers__note {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  margin: -10px -6px;
+  padding: 0;
+  border: 0;
   border-radius: var(--radius-pill);
-  box-shadow: var(--shadow-md);
-  font-weight: 600;
-  color: var(--color-primary);
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.verse-markers__note:hover {
+  background: var(--color-primary-soft);
 }
 
 /* ---------- Previous / next chapter ---------- */

@@ -1,0 +1,97 @@
+.study-item {
+  display: flex;
+  align-items: stretch;
+}
+
+.study-item__open {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: var(--space-3) var(--space-4);
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.study-item__open:hover {
+  background: var(--color-primary-soft);
+}
+
+.study-item__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0 var(--space-3);
+}
+
+.study-item__ref {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.study-item__meta {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+/* Up to two lines of Scripture or note text. */
+.study-item__preview,
+.study-item__note {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+}
+
+.study-item__preview {
+  font-family: var(--font-scripture);
+}
+
+.study-item__note {
+  white-space: pre-line;
+  color: var(--color-text);
+}
+
+.study-item__colour {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.study-item__colour::before {
+  content: "";
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: var(--radius-pill);
+  background: var(--hl-swatch);
+}
+
+.study-item__actions {
+  display: flex;
+  align-items: center;
+  padding-right: var(--space-1);
+}
+
+.study-item__action {
+  color: var(--color-text-muted);
+}
+
+.study-list__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-3);
+}
+
+.study-list__footer [role="status"] {
+  margin-right: auto;
+  font-weight: 600;
+}

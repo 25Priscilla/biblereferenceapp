@@ -1,0 +1,82 @@
+.note-editor {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.note-editor__passage {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  background: var(--color-surface);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  font-family: var(--font-scripture);
+  font-size: var(--text-sm);
+  line-height: 1.6;
+  color: var(--color-text-muted);
+  /* Long ranges are trimmed; the full text is in the reader. */
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.note-editor__form {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.note-editor__label {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+
+.note-editor__field {
+  width: 100%;
+  min-height: 8rem;
+  max-height: 40dvh;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  /* Literata falls back to Noto Serif Malayalam, so both scripts read well. */
+  font-family: var(--font-scripture);
+  line-height: 1.7;
+  resize: vertical;
+}
+
+.note-editor__field:focus-visible {
+  outline-offset: 0;
+}
+
+.note-editor__privacy {
+  font-size: var(--text-xs);
+  color: var(--color-text-subtle);
+}
+
+.note-editor__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.note-editor__actions .btn--text-danger {
+  margin-right: auto;
+}
+
+.note-editor__confirm {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.note-editor__confirm p {
+  font-weight: 600;
+}

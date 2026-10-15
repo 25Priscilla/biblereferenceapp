@@ -14,17 +14,20 @@ const PATHS = {
   close: "M18 6 6 18M6 6l12 12",
   chevronDown: "M6 9l6 6 6-6",
   columns: "M4 4h16v16H4zM12 4v16",
+  highlight: "M14.5 4.5l5 5L10 19H5v-5zM12 7l5 5M4 22h16",
+  note: "M5 3h14v13l-5 5H5zM14 21v-5h5M9 8h6M9 12h4",
+  trash: "M4 7h16M10 11v6M14 11v6M9 7V4h6v3M6 7l1 14h10l1-14",
 } as const;
 
 export type IconName = keyof typeof PATHS;
 
-export function Icon({ name, size = 24 }: { name: IconName; size?: number }) {
+export function Icon({ name, size = 24, filled = false }: { name: IconName; size?: number; filled?: boolean }) {
   return (
     <svg
       width={size}
       height={size}
       viewBox="0 0 24 24"
-      fill="none"
+      fill={filled ? "currentColor" : "none"}
       stroke="currentColor"
       strokeWidth={1.8}
       strokeLinecap="round"
