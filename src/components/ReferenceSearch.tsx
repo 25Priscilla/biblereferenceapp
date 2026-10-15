@@ -1,36 +1,59 @@
 import { useId, useState } from "react";
 import type { FormEvent } from "react";
+import { parseReference } from "../bible/reference";
 import { Icon } from "./Icon";
+import { useNavigation } from "../lib/navigation";
 import "./ReferenceSearch.css";
 
 /**
- * Quick reference search field.
- *
- * Phase 1: UI shell only. Reference parsing and validation (John 3:16,
- * Psalm 91:1-4, Genesis 1 …) are implemented in Phase 2; until then a
- * submission explains that honestly instead of guessing.
+ * Quick reference search: parses input such as "John 3:16", "Ps 91:1-4" or
+ * "Genesis 1" and opens it in the reader, or explains what is wrong.
  */
-export function ReferenceSearch({ autoFocus = false }: { autoFocus?: boolean }) {
+export function ReferenceSearch({
+  autoFocus = false,
+  compact = false,
+  label = "Go to a Bible reference",
+  onNavigated,
+}: {
+  autoFocus?: boolean;
+  /** Smaller variant for the reader toolbar and jump sheet. */
+  compact?: boolean;
+  label?: string;
+  /** Called after a successful jump (e.g. to close a sheet). */
+  onNavigated?: () => void;
+}) {
   const inputId = useId();
-  const hintId = useId();
+  const messageId = useId();
+  const { navigate } = useNavigation();
   const [value, setValue] = useState("");
-  const [message, setMessage] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function onSubmit(event: FormEvent) {
     event.preventDefault();
-    if (!value.trim()) {
-      setMessage("Type a reference such as John 3:16, Psalm 91:1-4 or Genesis 1.");
+    const result = parseReference(value);
+    if (!result.ok) {
+      setError(result.message);
       return;
     }
-    setMessage("Reference search is not available yet. Browse by book for now.");
+    setError(null);
+    setValue("");
+    // A jump adds a history entry, so Back returns to the previous passage.
+    navigate({ name: "reader", ref: result.ref });
+    onNavigated?.();
   }
 
   return (
-    <form className="ref-search" role="search" onSubmit={onSubmit}>
+    <form
+      className={compact ? "ref-search ref-search--compact" : "ref-search"}
+      role="search"
+      aria-label={label}
+      onSubmit={onSubmit}
+      noValidate
+    >
       <label htmlFor={inputId} className="visually-hidden">
-        Go to a Bible reference
+        {label}
       </label>
-      <div className="ref-search__field">
+      <div className="ref-search__field" data-invalid={error ? "" : undefined}>
         <span className="ref-search__icon">
           <Icon name="search" size={20} />
         </span>
@@ -42,22 +65,24 @@ export function ReferenceSearch({ autoFocus = false }: { autoFocus?: boolean }) 
           enterKeyHint="go"
           autoComplete="off"
           autoCorrect="off"
+          autoCapitalize="words"
           spellCheck={false}
           autoFocus={autoFocus}
           placeholder="e.g. John 3:16"
           value={value}
-          aria-describedby={message ? hintId : undefined}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={messageId}
           onChange={(e) => {
             setValue(e.target.value);
-            setMessage(null);
+            setError(null);
           }}
         />
         <button type="submit" className="ref-search__go">
           Go
         </button>
       </div>
-      <p id={hintId} className="ref-search__message" role="status" aria-live="polite">
-        {message}
+      <p id={messageId} className="ref-search__message" role="status" aria-live="polite">
+        {error ?? (compact ? null : "Try John 3:16, Ps 91:1-4, Gen 1 or 1 Cor 13.")}
       </p>
     </form>
   );

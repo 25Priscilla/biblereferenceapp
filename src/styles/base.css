@@ -74,13 +74,32 @@ button {
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: calc(var(--space-5) + var(--safe-top)) var(--space-4)
-    calc(var(--nav-height) + var(--safe-bottom) + var(--space-6));
+  /* Bottom padding clears the fixed tab bar so nothing hides behind it. */
+  padding: calc(var(--space-4) + var(--safe-top)) var(--space-4)
+    calc(var(--nav-height) + var(--safe-bottom) + var(--space-5));
 }
 
 .app__main--reader {
   max-width: none;
-  padding: 0 0 calc(var(--safe-bottom) + var(--space-7));
+  padding: 0 0 calc(var(--safe-bottom) + var(--space-6));
+}
+
+/* Wide (>= 900px, see WIDE_QUERY): sidebar + content instead of a stretched phone column. */
+.app--wide {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) minmax(0, 1fr);
+  align-items: start;
+}
+
+.app--wide .app__main {
+  max-width: var(--wide-max);
+  margin: 0;
+  padding: calc(var(--space-6) + var(--safe-top)) var(--space-6) var(--space-6);
+}
+
+.app--wide .app__main--reader {
+  max-width: none;
+  padding: 0;
 }
 
 /* ---------- Shared building blocks ---------- */
@@ -89,11 +108,11 @@ button {
   font-size: var(--text-xl);
   font-weight: 650;
   letter-spacing: -0.01em;
-  margin-bottom: var(--space-5);
+  margin-bottom: var(--space-4);
 }
 
 .section {
-  margin-top: var(--space-6);
+  margin-top: var(--space-5);
 }
 
 .section__header {
@@ -112,7 +131,7 @@ button {
 }
 
 .empty-state {
-  padding: var(--space-5) var(--space-4);
+  padding: var(--space-4);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-muted);

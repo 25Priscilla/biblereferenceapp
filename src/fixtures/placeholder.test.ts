@@ -11,3 +11,11 @@ describe("placeholder fixture", () => {
     for (const v of chapter.verses) expect(v.text).toMatch(/^\[Placeholder for verse \d+\.\]/);
   });
 });
+
+describe("placeholder verse count", () => {
+  it("extends to cover a requested verse, within a sane cap", () => {
+    expect(placeholderChapter("JHN", 3).verses).toHaveLength(12);
+    expect(placeholderChapter("JHN", 3, 16).verses).toHaveLength(16);
+    expect(placeholderChapter("PSA", 119, 9999).verses).toHaveLength(200);
+  });
+});

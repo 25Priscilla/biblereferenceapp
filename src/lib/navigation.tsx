@@ -20,7 +20,8 @@ export type TabName = "home" | "books" | "library" | "settings";
 
 interface NavigationValue {
   route: Route;
-  navigate: (route: Route) => void;
+  /** `replace` swaps the current entry instead of adding one (chapter stepping). */
+  navigate: (route: Route, options?: { replace?: boolean }) => void;
   back: () => void;
   canGoBack: boolean;
 }
@@ -60,10 +61,16 @@ export function NavigationProvider({
   }, []);
 
   const navigate = useCallback(
-    (route: Route) => {
-      const next = { route, depth: entry.depth + 1 };
-      window.history.pushState(next, "");
-      setEntry(next);
+    (route: Route, options?: { replace?: boolean }) => {
+      if (options?.replace) {
+        const next = { route, depth: entry.depth };
+        window.history.replaceState(next, "");
+        setEntry(next);
+      } else {
+        const next = { route, depth: entry.depth + 1 };
+        window.history.pushState(next, "");
+        setEntry(next);
+      }
       window.scrollTo(0, 0);
     },
     [entry.depth],

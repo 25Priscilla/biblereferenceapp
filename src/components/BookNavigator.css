@@ -1,0 +1,109 @@
+.book-nav__controls {
+  display: grid;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.book-nav__filter {
+  display: block;
+  width: 100%;
+  min-height: var(--touch-target);
+  padding: 0 var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.book-nav__filter::placeholder {
+  color: var(--color-text-subtle);
+}
+
+.book-nav__chapter-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0 0 var(--space-3) calc(var(--space-3) * -1);
+}
+
+.book-nav__book-title {
+  font-size: var(--text-lg);
+  font-weight: 650;
+}
+
+.book-nav__columns {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.book-nav__column-title {
+  margin-bottom: var(--space-3);
+}
+
+/* Wide book lists flow into columns instead of one very tall list. */
+.book-nav__list--columns {
+  columns: 2 11rem;
+  column-gap: 0;
+}
+
+.book-nav__list--columns .list__item {
+  break-inside: avoid;
+}
+
+.book-nav__list--columns .list__item + .list__item {
+  border-top: 0;
+}
+
+.book-nav__list--columns .list__button {
+  min-height: var(--touch-target);
+}
+
+/* ---------- Chapter grid ---------- */
+
+.chapter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chapter-grid__cell {
+  width: 100%;
+  aspect-ratio: 1;
+  min-height: var(--touch-target);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.chapter-grid__cell:hover {
+  background: var(--color-primary-soft);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.chapter-grid__cell[aria-current="page"] {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-on-primary);
+}
+
+/* ---------- Panel variant (reader sheet and desktop side panel) ---------- */
+
+.book-nav--panel .list__button {
+  min-height: var(--touch-target);
+}
+
+.book-nav--panel .chapter-grid {
+  grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+}
+
+.book-nav--panel .chapter-grid__cell {
+  aspect-ratio: auto;
+  height: var(--touch-target);
+}

@@ -22,12 +22,18 @@ export const PLACEHOLDER_TRANSLATION: TranslationInfo = {
 
 const PLACEHOLDER_VERSE_COUNT = 12;
 
-export function placeholderChapter(book: string, chapter: number): Chapter {
+/**
+ * The placeholder has no real versification, so it generates at least
+ * `minVerses` lines — enough to demonstrate jumping to e.g. John 3:16.
+ * Real translations will report their actual verse counts.
+ */
+export function placeholderChapter(book: string, chapter: number, minVerses = 0): Chapter {
+  const count = Math.max(PLACEHOLDER_VERSE_COUNT, Math.min(minVerses, 200));
   return {
     translationId: PLACEHOLDER_TRANSLATION.id,
     book,
     chapter,
-    verses: Array.from({ length: PLACEHOLDER_VERSE_COUNT }, (_, i) => ({
+    verses: Array.from({ length: count }, (_, i) => ({
       number: i + 1,
       text:
         `[Placeholder for verse ${i + 1}.] Verified Scripture text will appear here ` +

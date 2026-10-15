@@ -1,15 +1,8 @@
 import { Icon } from "./Icon";
-import type { IconName } from "./Icon";
 import { useNavigation } from "../lib/navigation";
 import type { TabName } from "../lib/navigation";
+import { TABS } from "./tabs";
 import "./BottomNav.css";
-
-const TABS: { name: TabName; label: string; icon: IconName }[] = [
-  { name: "home", label: "Home", icon: "home" },
-  { name: "books", label: "Books", icon: "book" },
-  { name: "library", label: "Library", icon: "bookmark" },
-  { name: "settings", label: "Settings", icon: "settings" },
-];
 
 export function BottomNav({ active }: { active: TabName }) {
   const { navigate } = useNavigation();

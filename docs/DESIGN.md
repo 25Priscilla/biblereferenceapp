@@ -31,7 +31,17 @@ Components use **semantic tokens only**, never raw values. Dark mode is chosen b
 
 ## Layout
 
-- Single column, at most 40rem wide for app screens and 36rem for the reader's text measure.
+Breakpoints are defined in `src/lib/useMediaQuery.ts` (and mirrored in CSS):
+
+| Width | Navigation | Home | Books | Reader |
+| --- | --- | --- | --- | --- |
+| < 900px (phones, small tablets) | Fixed bottom tab bar | Single column with wordmark | Testament toggle and one list | Text only; ‹ › and the reference button in the top bar; the reference button opens the "Go to passage" sheet |
+| 900–1199px | Left sidebar (wordmark plus tabs) | Heading, search, side-by-side buttons, Recent and Favorites in two columns | Old and New Testament side by side | Sidebar and text; inline jump box in the toolbar |
+| ≥ 1200px | Left sidebar | As above | As above | Adds a book and chapter panel beside the text |
+
+- App screens are at most 40rem wide on phones and 72rem on wide screens. The reader's text column is always at most 36rem, for a comfortable line length.
 - 4px spacing scale (`--space-1` to `--space-7`).
-- A bottom tab bar (Home, Books, Library, Settings) within thumb reach.
-- Navigation is stored in `history.state`, so the Android back gesture and browser back work naturally.
+- The main content's bottom padding clears the fixed tab bar plus the safe-area inset, so nothing is hidden behind it.
+- Touch targets are at least 44px, and most are 48px.
+- Navigation is stored in `history.state`, so the Android back gesture and browser back work naturally. Jumping to a passage adds a history entry. Previous/Next Chapter replaces it, so Back leaves the reader instead of rewinding chapter by chapter.
+- On wide screens, ← and → step chapters, except while typing.

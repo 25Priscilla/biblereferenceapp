@@ -60,3 +60,26 @@
   font-size: var(--text-sm);
   color: var(--color-text-muted);
 }
+
+.ref-search__field[data-invalid] {
+  border-color: var(--color-danger);
+}
+
+.ref-search__field[data-invalid] + .ref-search__message {
+  color: var(--color-danger);
+}
+
+/* Compact variant: reader toolbar and jump sheet. */
+.ref-search--compact .ref-search__field {
+  min-height: var(--touch-target);
+  box-shadow: none;
+}
+
+.ref-search--compact .ref-search__input,
+.ref-search--compact .ref-search__go {
+  height: 40px;
+}
+
+.ref-search--compact .ref-search__message:empty {
+  display: none;
+}
