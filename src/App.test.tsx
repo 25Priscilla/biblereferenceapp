@@ -256,7 +256,7 @@ describe("translations in the reader", () => {
   it("switches translation from the reader and keeps the passage", async () => {
     const user = await goTo("John 3:16");
     await user.click(screen.getByRole("button", { name: /Translation: World English Bible/ }));
-    await user.click(screen.getByRole("menuitemradio", { name: /IRV/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /മലയാളം/ }));
     await chapterLoaded();
 
     expect(screen.getByRole("heading", { level: 1, name: "യോഹന്നാന്‍ 3" })).toHaveAttribute("lang", "ml");
@@ -347,15 +347,15 @@ describe("library and settings", () => {
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Library" }));
     const group = screen.getByRole("radiogroup", { name: "Translations" });
-    expect(within(group).getAllByRole("radio")).toHaveLength(2);
+    expect(within(group).getAllByRole("radio")).toHaveLength(3);
     expect(within(group).getByRole("radio", { name: /World English Bible.*English/ })).toHaveAttribute(
       "aria-checked",
       "true",
     );
     expect(screen.getByRole("list", { name: "Not installed" })).toHaveTextContent(/സത്യവേദപുസ്തകം 1910/);
 
-    await user.click(within(group).getByRole("radio", { name: /IRV/ }));
-    expect(within(group).getByRole("radio", { name: /IRV/ })).toHaveAttribute("aria-checked", "true");
+    await user.click(within(group).getByRole("radio", { name: /മലയാളം/ }));
+    expect(within(group).getByRole("radio", { name: /മലയാളം/ })).toHaveAttribute("aria-checked", "true");
     expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
   });
 
@@ -363,9 +363,10 @@ describe("library and settings", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Settings" }));
-    await user.click(screen.getByRole("radio", { name: /IRV/ }));
+    await user.click(screen.getByRole("radio", { name: /മലയാളം/ }));
     expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
-    expect(screen.getByText(/creativecommons\.org\/licenses\/by-sa\/4\.0/)).toBeInTheDocument();
+    // IRV Malayalam and IRV Kannada are both CC BY-SA 4.0.
+    expect(screen.getAllByText(/creativecommons\.org\/licenses\/by-sa\/4\.0/)).toHaveLength(2);
   });
 });
 
@@ -481,5 +482,152 @@ describe("parallel reading", () => {
     expect(first).toHaveTextContent("[Sample text, not Scripture] GEN 1:1");
     expect(second).toBeEmptyDOMElement();
     expect(screen.getByRole("note")).toHaveTextContent(/Sample data\./);
+  });
+});
+
+describe("Kannada (IRV Kannada)", () => {
+  it("switches to Kannada from the reader and keeps the passage", async () => {
+    const user = await goTo("John 3:16");
+    await user.click(screen.getByRole("button", { name: /Translation: World English Bible/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /ಕನ್ನಡ/ }));
+    await chapterLoaded();
+
+    expect(screen.getByRole("heading", { level: 1, name: "ಯೋಹಾನನು 3" })).toHaveAttribute("lang", "kn");
+    expect(document.querySelector(".reader__text")).toHaveAttribute("lang", "kn");
+    expect(document.getElementById("v16")).toHaveTextContent(/ಲೋಕದ ಮೇಲೆ ಎಷ್ಟೋ ಪ್ರೀತಿಯನ್ನಿಟ್ಟು/);
+    expect(document.getElementById("v16")).toHaveClass("verse--target");
+    expect(screen.getByText(/Bridge Connectivity Solutions\..*CC BY-SA 4\.0/)).toBeInTheDocument();
+    expect(localStorage.getItem("versepath.translation")).toBe("kn-irv");
+  });
+
+  it("restores Kannada after a restart", async () => {
+    localStorage.setItem("versepath.translation", "kn-irv");
+    await goTo("Genesis 1");
+    expect(screen.getByRole("heading", { level: 1, name: "ಆದಿಕಾಂಡ 1" })).toBeInTheDocument();
+    expect(document.getElementById("v1")).toHaveTextContent(/ಆದಿಯಲ್ಲಿ ದೇವರು/);
+  });
+
+  it.each(["ಯೋಹಾ 3:16", "ಯೋಹಾನನು 3:16", "ಯೋಹಾನನು ೩:೧೬"])("opens a reference typed in Kannada: %s", async (input) => {
+    await goTo(input);
+    expect(screen.getByRole("heading", { level: 1, name: "John 3" })).toBeInTheDocument();
+    expect(document.getElementById("v16")).toHaveClass("verse--target");
+  });
+
+  it("can be chosen in the Library and Settings", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await user.click(screen.getByRole("button", { name: "Library" }));
+    await user.click(screen.getByRole("radio", { name: /ಕನ್ನಡ/ }));
+    expect(localStorage.getItem("versepath.translation")).toBe("kn-irv");
+    await user.click(screen.getByRole("button", { name: "Settings" }));
+    expect(screen.getByRole("radio", { name: /ಕನ್ನಡ/ })).toHaveAttribute("aria-checked", "true");
+    expect(screen.getByText(/Source: https:\/\/ebible\.org\/find\/details\.php\?id=kanirv/)).toBeInTheDocument();
+  });
+
+  it("shows verses the IRV Kannada prints together as one verse, not as missing", async () => {
+    localStorage.setItem("versepath.translation", "kn-irv");
+    const user = await goTo("Mark 5");
+    const bridged = document.getElementById("v3")!;
+    expect(bridged).toHaveTextContent(/^3–4/);
+    expect(bridged).toHaveTextContent(/ಸಮಾಧಿಯಲ್ಲಿನ ಗವಿಗಳೇ/);
+    expect(bridged).not.toHaveClass("verse--missing");
+    // A link to verse 4 still has somewhere to land.
+    expect(bridged).toContainElement(document.getElementById("v4"));
+    expect(document.querySelector(".verse--missing")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "Verses 3–4" }));
+    expect(screen.getByRole("button", { name: /^Mark 5:3-4\. Go to another passage/ })).toBeInTheDocument();
+    expect(bridged).toHaveClass("verse--target");
+    await user.click(screen.getByRole("button", { name: "Verses 3–4" }));
+    expect(document.querySelector(".verse--target")).toBeNull();
+  });
+
+  it("highlights a bridged verse when a link names its second number", async () => {
+    localStorage.setItem("versepath.translation", "kn-irv");
+    await goTo("Mark 5:4");
+    expect(document.getElementById("v3")).toHaveClass("verse--target");
+    expect(screen.getByRole("button", { name: /^Mark 5:4\. Go to another passage/ })).toBeInTheDocument();
+  });
+
+  it("keeps a bookmark made in English on the matching Kannada verse", async () => {
+    const user = await goTo("Mark 5");
+    await user.click(screen.getByRole("button", { name: "Verse 4" }));
+    await user.click(screen.getByRole("button", { name: "Bookmark" }));
+    await user.click(screen.getByRole("button", { name: /Translation: World English Bible/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /ಕನ್ನಡ/ }));
+    await chapterLoaded();
+    expect(screen.getByRole("button", { name: "Verses 3–4, bookmarked" })).toBeInTheDocument();
+  });
+
+  async function openParallel(reference: string, first: string, second: string) {
+    localStorage.setItem("versepath.translation", first);
+    localStorage.setItem("versepath.parallelTranslation", second);
+    localStorage.setItem("versepath.readingMode", "parallel");
+    return goTo(reference);
+  }
+
+  it("reads English and Kannada in parallel", async () => {
+    await openParallel("John 3:16", "web", "kn-irv");
+    const [en, kn] = document.getElementById("v16")!.querySelectorAll(".pverse__cell");
+    expect(en).toHaveTextContent(/For God so loved the world/);
+    expect(kn).toHaveAttribute("lang", "kn");
+    expect(kn).toHaveTextContent(/ಲೋಕದ ಮೇಲೆ ಎಷ್ಟೋ ಪ್ರೀತಿಯನ್ನಿಟ್ಟು/);
+    expect(screen.getByText("ಯೋಹಾನನು 3")).toBeInTheDocument();
+    expect(screen.getByText(/© 2017, 2019 Bridge Connectivity Solutions\./)).toBeInTheDocument();
+  });
+
+  it("reads Malayalam and Kannada in parallel", async () => {
+    await openParallel("John 3:16", "ml-irv", "kn-irv");
+    const [ml, kn] = document.getElementById("v16")!.querySelectorAll(".pverse__cell");
+    expect(ml).toHaveAttribute("lang", "ml");
+    expect(ml).toHaveTextContent(/ലോകത്തെ സ്നേഹിച്ചു/);
+    expect(kn).toHaveAttribute("lang", "kn");
+    expect(screen.getByText(/Bridge Communication Systems/)).toBeInTheDocument();
+    expect(screen.getByText(/© 2017, 2019 Bridge Connectivity Solutions\./)).toBeInTheDocument();
+  });
+
+  it("says when Kannada combines a verse, without shifting the English column", async () => {
+    await openParallel("Mark 5", "web", "kn-irv");
+    const [en3, kn3] = document.getElementById("v3")!.querySelectorAll(".pverse__cell");
+    expect(en3).toHaveTextContent(/He lived in the tombs/);
+    expect(kn3!.querySelector(".pverse__tag")).toHaveTextContent(/^IRVKan$/);
+    expect(kn3!.querySelector(".pverse__range")).toHaveTextContent(/^Verses 3–4$/);
+    expect(kn3).toHaveTextContent(/ಸಮಾಧಿಯಲ್ಲಿನ ಗವಿಗಳೇ/);
+    const [en4, kn4] = document.getElementById("v4")!.querySelectorAll(".pverse__cell");
+    expect(en4).toHaveTextContent(/because he had been often bound/);
+    expect(kn4).toHaveTextContent("Verse 4 is combined with verse 3 in the IRVKan text.");
+    expect(kn4).toHaveClass("pverse__cell--missing");
+  });
+
+  it("shows a bridged verse's range in the side-by-side layout too", async () => {
+    await openParallel("Mark 5", "web", "kn-irv");
+    const range = document.getElementById("v3")!.querySelector(".pverse__range")!;
+    expect(range).toHaveAttribute("lang", "en");
+    // Side-by-side columns hide .pverse__tag (jsdom doesn't apply that CSS),
+    // so the range must sit outside it, directly in the cell.
+    expect(range.closest(".pverse__tag")).toBeNull();
+    expect(range.parentElement).toHaveClass("pverse__cell");
+    // The verse number gutter still numbers the row, so rows stay aligned.
+    expect(screen.getByRole("button", { name: "Verse 3" })).toBeInTheDocument();
+    expect(document.querySelectorAll(".pverse")).toHaveLength(43);
+  });
+
+  it("leaves preferences saved before Kannada was added as they were", async () => {
+    await openParallel("John 3:16", "ml-irv", "web");
+    const [ml, en] = document.getElementById("v16")!.querySelectorAll(".pverse__cell");
+    expect(ml).toHaveAttribute("lang", "ml");
+    expect(en).toHaveAttribute("lang", "en");
+    expect(document.querySelector('[lang="kn"]')).toBeNull();
+    expect(localStorage.getItem("versepath.translation")).toBe("ml-irv");
+    expect(localStorage.getItem("versepath.parallelTranslation")).toBe("web");
+  });
+
+  it("counts a bridge at the end of a chapter as part of the chapter", async () => {
+    await openParallel("Philippians 2:30", "web", "kn-irv");
+    expect(screen.queryByRole("note")).toBeNull();
+    expect(document.querySelectorAll(".pverse")).toHaveLength(30);
+    expect(document.getElementById("v30")!.querySelectorAll(".pverse__cell")[1]).toHaveTextContent(
+      "Verse 30 is combined with verse 29 in the IRVKan text.",
+    );
   });
 });

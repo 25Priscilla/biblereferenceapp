@@ -103,7 +103,7 @@ describe("bookmarks", () => {
     const user = await goTo("John 3:16");
     await user.click(within(actions()).getByRole("button", { name: "Bookmark" }));
     await user.click(screen.getByRole("button", { name: /Change translation/ }));
-    await user.click(screen.getByRole("menuitemradio", { name: /IRV/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /മലയാളം/ }));
     await chapterLoaded();
 
     expect(within(actions()).getByRole("button", { name: "Bookmarked" })).toBeInTheDocument();
@@ -157,7 +157,7 @@ describe("highlights", () => {
     const user = await goTo("John 3:16");
     await chooseHighlight(user, "Pink");
     await user.click(screen.getByRole("button", { name: /Change translation/ }));
-    await user.click(screen.getByRole("menuitemradio", { name: /IRV/ }));
+    await user.click(screen.getByRole("menuitemradio", { name: /മലയാളം/ }));
     await chapterLoaded();
     expect(verse(16)).toHaveAttribute("data-hl", "pink");
     expect(verse(16).closest(".reader__text")).toHaveAttribute("lang", "ml");
@@ -377,7 +377,7 @@ describe("library", () => {
     const user = userEvent.setup();
     render(<App />);
     await user.click(screen.getByRole("button", { name: "Library" }));
-    expect(within(screen.getByRole("radiogroup", { name: "Translations" })).getAllByRole("radio")).toHaveLength(2);
+    expect(within(screen.getByRole("radiogroup", { name: "Translations" })).getAllByRole("radio")).toHaveLength(3);
   });
 });
 

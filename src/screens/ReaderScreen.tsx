@@ -25,15 +25,20 @@ import "./ReaderScreen.css";
 interface Selection {
   start: number;
   end: number;
+  /** Made by one tap: a verse, or a bridged verse such as 3–4. */
+  single: boolean;
 }
 
-/** Tap a verse to select it, tap another to extend to a range, tap again to clear. */
-function nextSelection(current: Selection | null, verse: number): Selection | null {
-  if (current && current.start === current.end) {
-    if (current.start === verse) return null;
-    return { start: Math.min(current.start, verse), end: Math.max(current.start, verse) };
+/**
+ * Tap a verse to select it, tap another to extend to a range, tap again to
+ * clear. A bridged verse (`from` < `to`) is selected as a whole.
+ */
+function nextSelection(current: Selection | null, from: number, to = from): Selection | null {
+  if (current?.single) {
+    if (current.start === from && current.end === to) return null;
+    return { start: Math.min(current.start, from), end: Math.max(current.end, to), single: false };
   }
-  return { start: verse, end: verse };
+  return { start: from, end: to, single: true };
 }
 
 /**
@@ -60,7 +65,9 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   const [noteSpan, setNoteSpan] = useState<VerseSpan | null>(null);
   const { highlights, bookmarks, notes, recordReading } = useStudy();
   const [selection, setSelection] = useState<Selection | null>(() =>
-    passage.verse === undefined ? null : { start: passage.verse, end: passage.verseEnd ?? passage.verse },
+    passage.verse === undefined
+      ? null
+      : { start: passage.verse, end: passage.verseEnd ?? passage.verse, single: passage.verseEnd === undefined },
   );
   const book = getBook(passage.book);
   const state = useChapter(repository, translation.id, passage.book, passage.chapter);
@@ -123,9 +130,10 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     ? { book: book.id, chapter: passage.chapter, verse: selection.start, verseEnd: selection.end }
     : { book: book.id, chapter: passage.chapter };
   const chapterTitle = `${repository.bookName(translation.id, book.id)} ${passage.chapter}`;
-  const isSelected = (n: number) => selection !== null && n >= selection.start && n <= selection.end;
+  const isSelected = (n: number, through = n) =>
+    selection !== null && n <= selection.end && through >= selection.start;
 
-  const select = (n: number) => setSelection((s) => nextSelection(s, n));
+  const select = (n: number, through = n) => setSelection((s) => nextSelection(s, n, through));
   const selectedSpan: VerseSpan | null = selection
     ? { book: book.id, chapter: passage.chapter, verse: selection.start, verseEnd: selection.end }
     : null;
@@ -143,6 +151,16 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
   for (const b of bookmarks) if (b.book === book.id && b.chapter === passage.chapter) annotationAt(b.verse).bookmarked = true;
   for (const note of notes) if (note.book === book.id && note.chapter === passage.chapter) annotationAt(note.verse).notes.push(note);
   const annotate = (n: number) => annotations.get(n) ?? NO_ANNOTATION;
+  /** A bridged verse shows the marks made on any of its verse numbers. */
+  const annotateSpan = (n: number, through = n): VerseAnnotation => {
+    if (through === n) return annotate(n);
+    const spans = Array.from({ length: through - n + 1 }, (_, i) => annotate(n + i));
+    return {
+      highlight: spans.find((a) => a.highlight)?.highlight,
+      bookmarked: spans.some((a) => a.bookmarked),
+      notes: spans.flatMap((a) => a.notes),
+    };
+  };
   const openNote = (note: Note) => setNoteSpan(note);
   const requestedEnd = passage.verseEnd ?? passage.verse;
 
@@ -212,8 +230,8 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
     const chapter = state.result.chapter;
     const outOfRange = requestedEnd !== undefined && requestedEnd > chapter.verseCount;
     const rows = [
-      ...chapter.verses.map((v) => ({ number: v.number, text: v.text as string | null })),
-      ...chapter.missing.map((n) => ({ number: n, text: null })),
+      ...chapter.verses.map((v) => ({ number: v.number, through: v.through, text: v.text as string | null })),
+      ...chapter.missing.map((n) => ({ number: n, through: undefined, text: null })),
     ].sort((a, b) => a.number - b.number);
 
     content = (
@@ -226,7 +244,7 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
         )}
 
         <div className="reader__text" lang={translation.language}>
-          {rows.map(({ number, text }) =>
+          {rows.map(({ number, through, text }) =>
             text === null ? (
               <p key={number} id={`v${number}`} className="verse verse--missing" lang="en">
                 <span className="verse__number">{number}</span>
@@ -236,24 +254,29 @@ export function ReaderScreen({ passage }: { passage: PassageRef }) {
               <p
                 key={number}
                 id={`v${number}`}
-                className={isSelected(number) ? "verse verse--target" : "verse"}
-                data-hl={annotate(number).highlight}
-                onClick={() => select(number)}
+                className={isSelected(number, through) ? "verse verse--target" : "verse"}
+                data-hl={annotateSpan(number, through).highlight}
+                onClick={() => select(number, through)}
               >
+                {/* Later numbers of a bridged verse, so links to them still scroll here. */}
+                {through &&
+                  Array.from({ length: through - number }, (_, i) => (
+                    <span key={i} id={`v${number + 1 + i}`} />
+                  ))}
                 <button
                   type="button"
                   className="verse__number"
-                  aria-label={verseLabel(number, annotate(number))}
-                  aria-pressed={isSelected(number)}
+                  aria-label={verseLabel(number, annotateSpan(number, through), through)}
+                  aria-pressed={isSelected(number, through)}
                   onClick={(e) => {
                     e.stopPropagation();
-                    select(number);
+                    select(number, through);
                   }}
                 >
-                  {number}
+                  {through ? `${number}–${through}` : number}
                 </button>
                 {text}
-                <VerseMarkers annotation={annotate(number)} onOpenNote={openNote} />
+                <VerseMarkers annotation={annotateSpan(number, through)} onOpenNote={openNote} />
               </p>
             ),
           )}

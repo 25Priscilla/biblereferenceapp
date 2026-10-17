@@ -94,7 +94,8 @@
   border-top: 1px dashed var(--color-border);
 }
 
-.pverse__cell:lang(ml) {
+.pverse__cell:lang(ml),
+.pverse__cell:lang(kn) {
   line-height: calc(var(--reader-line-height) + 0.15);
 }
 
@@ -115,6 +116,18 @@
   letter-spacing: 0.06em;
   color: var(--color-accent);
   vertical-align: 0.2em;
+}
+
+/* The verse range of a bridged verse (e.g. "3–4"), in both layouts. */
+.pverse__range {
+  margin-right: 0.4em;
+  font-family: var(--font-ui);
+  font-size: 0.62em;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-verse-number);
+  vertical-align: 0.2em;
+  white-space: nowrap;
 }
 
 @container (min-width: 40rem) {

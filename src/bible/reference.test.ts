@@ -224,3 +224,43 @@ describe("Malayalam book names", () => {
     err("പുസ്തകമില്ല 1", "unknown-book");
   });
 });
+
+describe("Kannada book names", () => {
+  it.each<[string, PassageRef]>([
+    ["ಯೋಹಾನನು 3:16", { book: "JHN", chapter: 3, verse: 16 }],
+    ["ಯೋಹಾ 3:16", { book: "JHN", chapter: 3, verse: 16 }],
+    ["ಯೋಹಾ. 3:16", { book: "JHN", chapter: 3, verse: 16 }],
+    ["ಯೋಹಾನನು ೩:೧೬", { book: "JHN", chapter: 3, verse: 16 }], // Kannada digits
+    ["ಕೀರ್ತನೆಗಳು 91:1-4", { book: "PSA", chapter: 91, verse: 1, verseEnd: 4 }],
+    ["ಕೀರ್ತ 23", { book: "PSA", chapter: 23 }],
+    ["ಆದಿಕಾಂಡ 1", { book: "GEN", chapter: 1 }],
+    ["ಆದಿ 1:1", { book: "GEN", chapter: 1, verse: 1 }],
+    ["1 ಯೋಹಾನನು 4:8", { book: "1JN", chapter: 4, verse: 8 }],
+    ["1ಯೋಹಾ 4:8", { book: "1JN", chapter: 4, verse: 8 }],
+    ["ಅ. ಕೃ. 2:38", { book: "ACT", chapter: 2, verse: 38 }],
+    ["ಅಪೊಸ್ತಲರ ಕೃತ್ಯಗಳು 2:38", { book: "ACT", chapter: 2, verse: 38 }],
+    ["ಪ.ಗೀ. 2:1", { book: "SNG", chapter: 2, verse: 1 }],
+    ["ಯೂದನು 5", { book: "JUD", chapter: 1, verse: 5 }],
+    ["ರೋಮಾಪುರದವರಿಗೆ", { book: "ROM", chapter: 1 }],
+    ["ಮಾರ್ಕ 5:3-4", { book: "MRK", chapter: 5, verse: 3, verseEnd: 4 }],
+  ])("%s", (input, expected) => {
+    expect(ok(input)).toEqual(expected);
+  });
+
+  it("accepts a unique prefix of a Kannada name", () => {
+    expect(ok("ಯೆರೆಮೀ 1")).toEqual({ book: "JER", chapter: 1 });
+  });
+
+  it("asks for more letters when a Kannada prefix fits several books", () => {
+    err("ಯೋ 1", "ambiguous-book");
+  });
+
+  it("rejects an unknown Kannada word", () => {
+    err("ಪುಸ್ತಕವಿಲ್ಲ 1", "unknown-book");
+  });
+
+  it("keeps the English and Malayalam parsers unchanged", () => {
+    expect(ok("Jn 3.16")).toEqual({ book: "JHN", chapter: 3, verse: 16 });
+    expect(ok("യോഹ. 3:16")).toEqual({ book: "JHN", chapter: 3, verse: 16 });
+  });
+});

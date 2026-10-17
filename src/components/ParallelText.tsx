@@ -19,7 +19,9 @@ export interface ParallelColumn {
  * Two translations of one chapter, aligned verse by verse. Each verse number
  * is one row holding both translations, so the columns can never drift
  * apart: a verse one translation omits (or numbers differently) shows as
- * "not included" in that column instead of shifting the text. Side by side
+ * "not included" in that column instead of shifting the text. A bridged
+ * verse (several verses printed as one, e.g. Mark 5:3-4) sits on its first
+ * row, and the later rows say the verse is combined with it. Side by side
  * when there is room, stacked pairs on narrow screens. Highlights, bookmarks
  * and notes belong to the verse row, so both columns always share them.
  */
@@ -37,9 +39,16 @@ export function ParallelText({
   onOpenNote?: (note: Note) => void;
 }) {
   const texts = columns.map(({ result }) => {
-    const byNumber = new Map<number, string>();
-    if (result.ok) for (const v of result.chapter.verses) byNumber.set(v.number, v.text);
-    return byNumber;
+    const byNumber = new Map<number, { text: string; through?: number }>();
+    /** Verse number → the bridged verse it is printed with. */
+    const joinedTo = new Map<number, number>();
+    if (result.ok) {
+      for (const v of result.chapter.verses) {
+        byNumber.set(v.number, { text: v.text, through: v.through });
+        for (let n = v.number + 1; n <= (v.through ?? v.number); n++) joinedTo.set(n, v.number);
+      }
+    }
+    return { byNumber, joinedTo };
   });
   const lastVerse = Math.max(0, ...columns.map(({ result }) => (result.ok ? result.chapter.verseCount : 0)));
   const numbers = Array.from({ length: lastVerse }, (_, i) => i + 1);
@@ -87,14 +96,30 @@ export function ParallelText({
               <VerseMarkers annotation={annotate(n)} onOpenNote={onOpenNote} />
             </div>
             {columns.map((col, i) => {
-              const text = texts[i]!.get(n);
+              const verse = texts[i]!.byNumber.get(n);
+              const joinedTo = texts[i]!.joinedTo.get(n);
               if (!col.result.ok) return <div key={i} className="pverse__cell" aria-hidden="true" />;
-              return text ? (
+              if (joinedTo !== undefined) {
+                return (
+                  <p key={i} className="pverse__cell pverse__cell--missing" lang="en">
+                    <span className="pverse__tag">{col.info.abbreviation}</span>
+                    Verse {n} is combined with verse {joinedTo} in the {col.info.abbreviation} text.
+                  </p>
+                );
+              }
+              return verse ? (
                 <p key={i} className="pverse__cell" lang={col.info.language}>
                   <span className="pverse__tag" lang="en">
                     {col.info.abbreviation}
                   </span>
-                  {text}
+                  {/* Shown at every width: the gutter only numbers the row's first verse. */}
+                  {verse.through && (
+                    <span className="pverse__range" lang="en">
+                      <span className="visually-hidden">Verses </span>
+                      {n}–{verse.through}
+                    </span>
+                  )}
+                  {verse.text}
                 </p>
               ) : (
                 <p key={i} className="pverse__cell pverse__cell--missing" lang="en">

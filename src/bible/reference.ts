@@ -12,6 +12,7 @@
 
 import { BOOK_ALIASES } from "./aliases";
 import { BOOKS, getBook } from "./canon";
+import { KANNADA_BOOK_ABBREVIATIONS, KANNADA_BOOK_NAMES } from "./translations/kannadaNames";
 import { MALAYALAM_BOOK_ABBREVIATIONS, MALAYALAM_BOOK_NAMES } from "./translations/malayalamNames";
 import type { BookInfo } from "./canon";
 import type { PassageRef } from "./types";
@@ -49,6 +50,12 @@ export function normaliseBookName(input: string): string {
   return s.replace(/[\s.'’\u200C\u200D]/g, "");
 }
 
+/** Book names and abbreviations in each Indian language, from the publishers' own editions. */
+const LOCAL_NAMES = [
+  [MALAYALAM_BOOK_NAMES, MALAYALAM_BOOK_ABBREVIATIONS],
+  [KANNADA_BOOK_NAMES, KANNADA_BOOK_ABBREVIATIONS],
+] as const;
+
 const ALIAS_INDEX: ReadonlyMap<string, string> = (() => {
   const index = new Map<string, string>();
   const add = (alias: string, id: string) => {
@@ -63,18 +70,22 @@ const ALIAS_INDEX: ReadonlyMap<string, string> = (() => {
     add(book.name, book.id);
     add(book.id, book.id);
     for (const alias of BOOK_ALIASES[book.id] ?? []) add(alias, book.id);
-    const malayalam = MALAYALAM_BOOK_NAMES[book.id];
-    if (malayalam) add(malayalam, book.id);
-    for (const alias of MALAYALAM_BOOK_ABBREVIATIONS[book.id] ?? []) add(alias, book.id);
+    for (const [names, abbreviations] of LOCAL_NAMES) {
+      const name = names[book.id];
+      if (name) add(name, book.id);
+      for (const alias of abbreviations[book.id] ?? []) add(alias, book.id);
+    }
   }
   return index;
 })();
 
-/** Full book names (English and Malayalam), normalised, for prefix matching. */
+/** Full book names (English, Malayalam and Kannada), normalised, for prefix matching. */
 const FULL_NAMES: readonly [string, string][] = BOOKS.flatMap((b) => {
   const names: [string, string][] = [[normaliseBookName(b.name), b.id]];
-  const malayalam = MALAYALAM_BOOK_NAMES[b.id];
-  if (malayalam) names.push([normaliseBookName(malayalam), b.id]);
+  for (const [local] of LOCAL_NAMES) {
+    const name = local[b.id];
+    if (name) names.push([normaliseBookName(name), b.id]);
+  }
   return names;
 });
 
@@ -162,7 +173,7 @@ export type ParseResult =
 const EXAMPLE = "e.g. John 3:16, Psalm 91:1-4 or Genesis 1";
 
 // Book: optional leading number/ordinal, then a name starting with a letter
-// in any script (Malayalam names include combining vowel signs and joiners).
+// in any script (Malayalam and Kannada names include combining vowel signs and joiners).
 // Location: everything from the first digit that follows the name.
 const REFERENCE_PATTERN =
   /^((?:[1-3]\s*|(?:iii|ii|i|first|second|third|1st|2nd|3rd)[\s.]+)?\p{L}[\p{L}\p{M}\s.'’\u200C\u200D]*?)\s*(\d[\d\s:.\-]*)?$/iu;
@@ -176,6 +187,7 @@ function fail(code: ParseErrorCode, message: string): ParseResult {
 export function parseReference(input: string): ParseResult {
   const text = input
     .trim()
+    .replace(/[೦-೯]/g, (d) => String(d.charCodeAt(0) - 0x0ce6)) // Kannada digits ೦-೯
     .replace(/[‐-―−]/g, "-") // hyphens, en/em dashes, minus
     .replace(/\s+/g, " ");
 

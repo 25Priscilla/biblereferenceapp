@@ -2,8 +2,9 @@
  * ⚠ TEST FIXTURES — NOT SCRIPTURE ⚠
  *
  * Tiny, obviously labelled translations used only by tests to exercise the
- * data layer (missing books, chapters and verses, malformed files, Unicode
- * Malayalam). Every line says it is sample text. Never ship these.
+ * data layer (missing books, chapters and verses, malformed files, verse
+ * bridges, Unicode Malayalam and Kannada). Every line says it is sample
+ * text. Never ship these.
  */
 
 import { createRepository } from "../bible/translations/repository";
@@ -65,6 +66,38 @@ export const SAMPLE_ML: TranslationSource = {
   }),
 };
 
+/** "ಮಾದರಿ ಪಠ್ಯ" = "sample text". */
+const knLine = (ref: string) => `[ಮಾದರಿ ಪಠ್ಯ — sample text, not Scripture] ${ref}`;
+
+/**
+ * Kannada fixture with verse bridges; MRK only. Chapter 1 prints 2-3 as one
+ * verse and omits 4. Chapter 2 ends with the bridge 2-3.
+ */
+export const SAMPLE_KN: TranslationSource = {
+  info: fixtureInfo({
+    id: "sample-kn",
+    abbreviation: "SKN",
+    name: "ಮಾದರಿ (ಪರೀಕ್ಷೆ)",
+    language: "kn",
+    languageName: "ಕನ್ನಡ",
+    bookNames: { MRK: "ಮಾರ್ಕನು" },
+  }),
+  books: ["MRK"],
+  loadBook: async (book) => ({
+    format: 1,
+    translation: "sample-kn",
+    book,
+    chapters: [
+      [knLine("1:1"), knLine("1:2-3"), null, null, knLine("1:5")],
+      [knLine("2:1"), knLine("2:2-3"), null],
+    ],
+    bridges: [
+      [1, 2, 3],
+      [2, 2, 3],
+    ],
+  }),
+};
+
 /** Declares GEN but its file is malformed. */
 export const SAMPLE_BROKEN: TranslationSource = {
   info: fixtureInfo({ id: "sample-broken" }),
@@ -76,6 +109,7 @@ export const SAMPLE_BROKEN: TranslationSource = {
 };
 
 export const ML_SAMPLE_LINE = mlLine;
+export const KN_SAMPLE_LINE = knLine;
 export const SAMPLE_LINE = line;
 
 export function sampleRepository(sources: TranslationSource[] = [SAMPLE_EN, SAMPLE_ML, SAMPLE_BROKEN]) {

@@ -15,9 +15,12 @@ export interface VerseAnnotation {
 
 export const NO_ANNOTATION: VerseAnnotation = { bookmarked: false, notes: [] };
 
-/** Accessible name for a verse number, so highlights and notes are not conveyed by colour alone. */
-export function verseLabel(n: number, a: VerseAnnotation): string {
-  let label = `Verse ${n}`;
+/**
+ * Accessible name for a verse number, so highlights and notes are not
+ * conveyed by colour alone. `through` is the end of a bridged verse.
+ */
+export function verseLabel(n: number, a: VerseAnnotation, through?: number): string {
+  let label = through ? `Verses ${n}–${through}` : `Verse ${n}`;
   if (a.highlight) label += `, highlighted ${HIGHLIGHT_LABELS[a.highlight].toLowerCase()}`;
   if (a.bookmarked) label += ", bookmarked";
   if (a.notes.length) label += ", has a note";

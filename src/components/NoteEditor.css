@@ -41,7 +41,7 @@
   background: var(--color-surface);
   color: var(--color-text);
   font: inherit;
-  /* Literata falls back to Noto Serif Malayalam, so both scripts read well. */
+  /* Literata falls back to Noto Serif Malayalam and Kannada, so every script reads well. */
   font-family: var(--font-scripture);
   line-height: 1.7;
   resize: vertical;

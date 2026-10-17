@@ -15,7 +15,7 @@ export interface PassageRef {
 }
 
 /** BCP 47 language codes. */
-export type LanguageCode = "en" | "ml";
+export type LanguageCode = "en" | "ml" | "kn";
 
 /** Metadata a translation must declare before it can be listed in the app. */
 export interface TranslationInfo {
@@ -57,6 +57,12 @@ export interface PlannedTranslation {
 
 export interface Verse {
   number: number;
+  /**
+   * Last verse number when the translation prints several verses as one
+   * (a "verse bridge", e.g. Mark 5:3-4 in the IRV Kannada). Absent for a
+   * single verse.
+   */
+  through?: number;
   text: string;
 }
 
@@ -64,10 +70,13 @@ export interface Chapter {
   translationId: string;
   book: string;
   chapter: number;
-  /** Verses present in the translation, in order. */
+  /** Verses present in the translation, in order. A bridged verse appears once. */
   verses: Verse[];
-  /** Highest verse number in this chapter. */
+  /** Highest verse number in this chapter, including the end of a bridge. */
   verseCount: number;
-  /** Verse numbers within 1…verseCount that this translation omits. */
+  /**
+   * Verse numbers within 1…verseCount that this translation omits. Numbers
+   * covered by a bridge are not missing: their text is in the bridged verse.
+   */
   missing: number[];
 }

@@ -6,6 +6,9 @@ import "@fontsource/literata/600.css";
 // Bundled so Malayalam renders consistently offline (SIL Open Font License).
 import "@fontsource/noto-serif-malayalam/malayalam-400.css";
 import "@fontsource/noto-serif-malayalam/malayalam-600.css";
+// Bundled so Kannada renders consistently offline (SIL Open Font License).
+import "@fontsource/noto-serif-kannada/kannada-400.css";
+import "@fontsource/noto-serif-kannada/kannada-600.css";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import { applyTheme, loadTheme } from "./lib/preferences";

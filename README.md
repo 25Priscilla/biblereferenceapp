@@ -2,11 +2,11 @@
 
 **Every Scripture, One Tap Away.**
 
-VersePath is a free mobile Bible app for pastors, preachers, Sunday school teachers, students, families and everyday readers. Its focus is making it very fast to find and switch between Bible references, in multiple English and Malayalam translations.
+VersePath is a free mobile Bible app for pastors, preachers, Sunday school teachers, students, families and everyday readers. Its focus is making it very fast to find and switch between Bible references, in multiple English, Malayalam and Kannada translations.
 
 No account. No ads. No subscriptions.
 
-> **Status: Phase 4 (personal study tools).** Bookmarks, highlights, private notes and recent reading are saved on the device. Two verified translations are bundled and work fully offline: the **World English Bible** (public domain) and the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems). You can switch translation inside the reader, read two translations in parallel, and type references in English or Malayalam. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
+> **Status: Phase 4.1 (Kannada translation).** Bookmarks, highlights, private notes and recent reading are saved on the device. Three verified translations are bundled and work fully offline: the **World English Bible** (public domain), the **IRV Malayalam** (CC BY-SA 4.0, © Bridge Communication Systems) and the **IRV Kannada** (CC BY-SA 4.0, © Bridge Connectivity Solutions). You can switch translation inside the reader, read any two translations in parallel, and type references in English, Malayalam or Kannada. See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) and the [Roadmap](#roadmap).
 
 ## Tech stack
 
@@ -72,7 +72,7 @@ src/
   bible/               canon.ts (book IDs and metadata, no text), aliases.ts (abbreviations),
                        reference.ts (parse, validate, format), chapterNav.ts (previous/next), types.ts
   bible/translations/  catalog (licensed translations), repository (data access), book file validation,
-                       Malayalam book names
+                       Malayalam and Kannada book names
   data/bibles/         Bundled per-book JSON for each translation (generated, do not edit)
   lib/                 navigation (router), preferences (theme, translation), translation (active
                        translation context), study (study data context), useChapter, usePassageText,
@@ -98,12 +98,13 @@ The parser (`src/bible/reference.ts`) accepts:
 | `Jude 5` | Verse 5 of a single-chapter book |
 | `Revel 1` | A unique prefix of a book name |
 | `യോഹ. 3:16`, `യോഹന്നാൻ 3:16`, `സങ്കീ. 23` | Malayalam book names and abbreviations, as printed in the IRV |
+| `ಯೋಹಾ 3:16`, `ಯೋಹಾನನು 3:16`, `ಕೀರ್ತ 23`, `ಯೋಹಾನನು ೩:೧೬` | Kannada book names and abbreviations, as printed in the IRV Kannada, with Kannada or ASCII digits |
 
 Invalid input gets a specific message: unknown books suggest the closest match ("Did you mean John?"), ambiguous abbreviations ("Ph") list the candidates, and chapters past the end of a book say how many chapters it has. Ranges that span chapters (`John 3:16-4:2`, `Genesis 1-3`) are not supported yet and say so. Verse upper bounds are checked by the reader against each translation's own verse counts, not by the parser.
 
 ## Parallel reading
 
-The columns button in the reader toolbar shows two translations verse by verse. They sit side by side when there is room and as stacked pairs on phones. Each column has its own translation selector, and choosing the other column's translation swaps the two. Chapter navigation, the passage and verse selection are shared by both columns. Every verse number is a single row, so a verse that one translation omits shows as "not included" in that column, and the other column never shifts. The reading mode and both translations are remembered after a restart. You can also set the reading mode in **Settings → Reading mode**.
+The columns button in the reader toolbar shows two translations verse by verse. They sit side by side when there is room and as stacked pairs on phones. Each column has its own translation selector, and choosing the other column's translation swaps the two. Chapter navigation, the passage and verse selection are shared by both columns. Every verse number is a single row, so a verse that one translation omits shows as "not included" in that column, and the other column never shifts. Where a translation prints verses together (for example Mark 5:3-4 in the IRV Kannada), the combined text sits on the first row and the next row says the verse is combined with it. The reading mode and both translations are remembered after a restart. You can also set the reading mode in **Settings → Reading mode**.
 
 ## Study tools
 
@@ -111,7 +112,7 @@ Tap a verse number (or a verse) in the reader to select it; tap another to selec
 
 - **Bookmark** saves the verse or range. Press it again to remove the bookmark. The same passage is never saved twice.
 - **Highlight** opens four colours (yellow, green, blue, pink) and **Remove highlight**. Highlights cover whole verses and are shared by both columns in parallel reading.
-- **Note** opens a plain-text editor with Save and Cancel. An existing note can be edited or deleted (deleting asks first). Any script works, including Malayalam.
+- **Note** opens a plain-text editor with Save and Cancel. An existing note can be edited or deleted (deleting asks first). Any script works, including Malayalam and Kannada.
 
 Verses with a bookmark or note show a small marker; tapping the note marker opens the note. The **Library** has Bookmarks, Highlights, Notes and Recent tabs. Every item opens its passage, and items can be removed there (notes through their editor). **Home** shows "Continue reading", the latest few passages and bookmarks.
 
@@ -127,4 +128,5 @@ See [docs/TRANSLATIONS.md](docs/TRANSLATIONS.md) for the licence record, data fo
 2. **Navigation** (done): reference parser (John 3:16, Psalm 91:1-4, Genesis 1), book abbreviations, validation messages, previous/next chapter, in-reader jump. A verse *picker* waits for real verse counts in Phase 3; verses can already be typed.
 3. **Translations** (done): offline per-book JSON data layer, WEB (English) and IRV (Malayalam), in-reader translation switching, verse and range selection, Malayalam reference search, translation choice remembered
 4. **Personal study tools** (done): bookmarks, highlights, notes, reading history, Library tabs, local persistence. Labels and adjustable reading preferences are not built yet.
+   - **4.1 Kannada** (done): IRV Kannada (all 66 books, offline), Kannada book names and reference search, bundled Noto Serif Kannada font, parallel reading with English and Malayalam, verse bridges kept and shown honestly. Converter fixed to keep verse bridges.
 5. **Platform QA**: Android and iOS, accessibility, performance, offline behaviour

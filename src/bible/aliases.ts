@@ -5,8 +5,9 @@
  *
  * Entries are normalised before lookup (lower-cased, spaces and dots
  * removed, "First"/"I"/"1st" → "1"), so "1 Sam", "1Sam" and "I Sam." all
- * match "1sam". Malayalam names and abbreviations live in
- * translations/malayalamNames.ts and are indexed alongside these.
+ * match "1sam". Malayalam and Kannada names and abbreviations live in
+ * translations/malayalamNames.ts and translations/kannadaNames.ts and are
+ * indexed alongside these.
  *
  * Deliberately excluded because they are ambiguous between books:
  * "Ju" (Judges/Jude), "Ph" (Philippians/Philemon), "Jo" (Joshua/Job/Joel/John/Jonah).

@@ -1,4 +1,4 @@
-import { ML_SAMPLE_LINE, SAMPLE_EN, SAMPLE_LINE, sampleRepository } from "../../test/fixtures";
+import { KN_SAMPLE_LINE, ML_SAMPLE_LINE, SAMPLE_EN, SAMPLE_KN, SAMPLE_LINE, sampleRepository } from "../../test/fixtures";
 import { validateBookFile } from "./bookFile";
 import { createRepository } from "./repository";
 
@@ -132,5 +132,67 @@ describe("book file validation", () => {
     ["a verse that is not text", { ...valid, chapters: [["a", 3]] }],
   ])("rejects %s", (_label, raw) => {
     expect(validateBookFile(raw, "t", "GEN").ok).toBe(false);
+  });
+
+  it("accepts verse bridges and defaults to none", () => {
+    const bridged = { ...valid, chapters: [["a", "b", null]], bridges: [[1, 2, 3]] };
+    const result = validateBookFile(bridged, "t", "GEN");
+    expect(result.ok && result.data.bridges).toEqual([[1, 2, 3]]);
+    const plain = validateBookFile(valid, "t", "GEN");
+    expect(plain.ok && plain.data.bridges).toEqual([]);
+  });
+
+  it.each([
+    ["bridges that are not a list", "x"],
+    ["a bridge that is not three numbers", [[1, 2]]],
+    ["a bridge that is not a range", [[1, 2, 2]]],
+    ["a bridge with no text", [[1, 3, 4]]],
+    ["a bridge that would hide a verse's text", [[1, 1, 2]]],
+    ["a bridge past the end of the chapter", [[1, 2, 4]]],
+    ["overlapping bridges", [[1, 2, 3], [1, 2, 3]]],
+  ])("rejects %s", (_label, bridges) => {
+    const raw = { ...valid, chapters: [["a", "b", null]], bridges };
+    expect(validateBookFile(raw, "t", "GEN").ok).toBe(false);
+  });
+});
+
+describe("verse bridges (Kannada sample fixture)", () => {
+  const repo = createRepository([SAMPLE_KN]);
+
+  it("lists a bridged verse once, and does not report its numbers as missing", async () => {
+    const result = await repo.loadChapter("sample-kn", "MRK", 1);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.chapter.verses).toEqual([
+      { number: 1, text: KN_SAMPLE_LINE("1:1") },
+      { number: 2, through: 3, text: KN_SAMPLE_LINE("1:2-3") },
+      { number: 5, text: KN_SAMPLE_LINE("1:5") },
+    ]);
+    expect(result.chapter.missing).toEqual([4]);
+    expect(result.chapter.verseCount).toBe(5);
+  });
+
+  it("counts a bridge at the end of a chapter in the verse count", async () => {
+    const result = await repo.loadChapter("sample-kn", "MRK", 2);
+    expect(result.ok && result.chapter.verseCount).toBe(3);
+    expect(result.ok && result.chapter.missing).toEqual([]);
+  });
+
+  it("finds the bridged verse from either of its numbers", async () => {
+    for (const verse of [2, 3]) {
+      const result = await repo.getVerse("sample-kn", { book: "MRK", chapter: 1, verse });
+      expect(result.ok && result.verse).toEqual({ number: 2, through: 3, text: KN_SAMPLE_LINE("1:2-3") });
+    }
+  });
+
+  it("includes a bridge that overlaps a range, once", async () => {
+    const result = await repo.getVerseRange("sample-kn", { book: "MRK", chapter: 1, verse: 3, verseEnd: 5 });
+    expect(result.ok && result.verses.map((v) => v.number)).toEqual([2, 5]);
+    expect(result.ok && result.missing).toEqual([4]);
+  });
+
+  it("keeps Kannada text and book names unchanged", async () => {
+    expect(repo.bookName("sample-kn", "MRK")).toBe("ಮಾರ್ಕನು");
+    expect(repo.getTranslation("sample-kn")?.language).toBe("kn");
   });
 });

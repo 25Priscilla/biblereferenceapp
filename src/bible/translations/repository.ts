@@ -111,11 +111,20 @@ export function createRepository(sources: readonly TranslationSource[]): BibleRe
     if (!loaded.ok) return loaded;
 
     const rows = Number.isInteger(chapter) && chapter >= 1 ? loaded.data.chapters[chapter - 1] : undefined;
+    const through = new Map<number, number>();
+    for (const [c, first, last] of loaded.data.bridges) if (c === chapter) through.set(first, last);
     const verses: Verse[] = [];
     const missing: number[] = [];
+    let bridgedUntil = 0;
     rows?.forEach((text, i) => {
-      if (text) verses.push({ number: i + 1, text });
-      else missing.push(i + 1);
+      const n = i + 1;
+      if (n <= bridgedUntil) return; // part of the bridged verse before it
+      const last = through.get(n);
+      if (text && last) {
+        verses.push({ number: n, through: last, text });
+        bridgedUntil = last;
+      } else if (text) verses.push({ number: n, text });
+      else missing.push(n);
     });
     if (verses.length === 0) {
       return fail(
@@ -123,7 +132,8 @@ export function createRepository(sources: readonly TranslationSource[]): BibleRe
         `${bookName(translationId, book)} ${chapter} isn’t available in ${source.info.abbreviation}.`,
       );
     }
-    const verseCount = verses[verses.length - 1]!.number;
+    const lastVerse = verses[verses.length - 1]!;
+    const verseCount = lastVerse.through ?? lastVerse.number;
     return {
       ok: true,
       chapter: {
@@ -143,10 +153,11 @@ export function createRepository(sources: readonly TranslationSource[]): BibleRe
     const { chapter } = result;
     const start = ref.verse ?? 1;
     const end = ref.verse === undefined ? chapter.verseCount : (ref.verseEnd ?? ref.verse);
-    const verses = chapter.verses.filter((v) => v.number >= start && v.number <= end);
+    // A bridged verse is included when any of its numbers is in the range.
+    const verses = chapter.verses.filter((v) => v.number <= end && (v.through ?? v.number) >= start);
     const missing: number[] = [];
     for (let n = start; n <= Math.min(end, chapter.verseCount); n++) {
-      if (!verses.some((v) => v.number === n)) missing.push(n);
+      if (!verses.some((v) => v.number <= n && n <= (v.through ?? v.number))) missing.push(n);
     }
     if (verses.length === 0) {
       const label = `${bookName(translationId, ref.book)} ${ref.chapter}:${start}${end !== start ? `-${end}` : ""}`;

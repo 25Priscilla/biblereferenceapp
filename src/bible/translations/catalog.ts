@@ -5,6 +5,7 @@
  */
 
 import type { PlannedTranslation, TranslationInfo } from "../types";
+import { KANNADA_BOOK_NAMES } from "./kannadaNames";
 import { MALAYALAM_BOOK_NAMES } from "./malayalamNames";
 
 export const WEB: TranslationInfo = {
@@ -40,7 +41,26 @@ export const ML_IRV: TranslationInfo = {
   bookNames: MALAYALAM_BOOK_NAMES,
 };
 
-export const INSTALLED_TRANSLATIONS: readonly TranslationInfo[] = [WEB, ML_IRV];
+export const KN_IRV: TranslationInfo = {
+  id: "kn-irv",
+  // eBible.org's own abbreviation, so it can't be confused with the Malayalam IRV.
+  abbreviation: "IRVKan",
+  name: "ಇಂಡಿಯನ್ ರಿವೈಜ್ಡ್ ವರ್ಸನ್ (IRV) - ಕನ್ನಡ - 2019",
+  language: "kn",
+  languageName: "ಕನ್ನಡ",
+  source: "eBible.org (kanirv, VPL edition)",
+  sourceUrl: "https://ebible.org/find/details.php?id=kanirv",
+  licence: "CC BY-SA 4.0",
+  licenceUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
+  attribution:
+    "Indian Revised Version (IRV) Kannada Bible, copyright © 2017, 2019 Bridge Connectivity Solutions. " +
+    "Contributor: Bridge Connectivity Solutions Pvt. Ltd. Licensed under CC BY-SA 4.0. Text unmodified.",
+  offlineAllowed: true,
+  isPlaceholder: false,
+  bookNames: KANNADA_BOOK_NAMES,
+};
+
+export const INSTALLED_TRANSLATIONS: readonly TranslationInfo[] = [WEB, ML_IRV, KN_IRV];
 
 export const DEFAULT_TRANSLATION_ID = WEB.id;
 

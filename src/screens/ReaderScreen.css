@@ -129,8 +129,9 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Malayalam script needs more room for stacked conjuncts and vowel signs. */
-.reader__text:lang(ml) {
+/* Malayalam and Kannada scripts need more room for stacked conjuncts and vowel signs. */
+.reader__text:lang(ml),
+.reader__text:lang(kn) {
   line-height: calc(var(--reader-line-height) + 0.15);
 }
 
